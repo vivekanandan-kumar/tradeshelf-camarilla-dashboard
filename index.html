@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Camarilla · Static Dashboard (Auto-Refresh 10 PM)</title>
+<style>
+  /* Your existing CSS styles here - same as original dashboard */
+  :root {
+    --bg:#f0f4f8; --bg2:#e8edf5; --bg3:#dde4ef;
+    --surf:#ffffff; --surf2:#f5f8fc; --bdr:#d0d9ea;
+    --txt:#1a2540; --dim:#8898b8; --mid:#4a5e82;
+    --acc:#1565c0; --green:#1b8a4c; --red:#c62828;
+    --yellow:#b45d00; --blue:#1565c0; --teal:#00695c;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'Outfit', sans-serif;
+  }
+  /* Add all your existing CSS styles here */
+  body { background: var(--bg); font-family: var(--sans); margin: 0; padding: 20px; }
+  .container { max-width: 1400px; margin: 0 auto; }
+  .status-bar { background: #eef2f7; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .refresh-badge { background: var(--green); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-family: var(--mono); }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 20px; }
+  /* Add rest of your CSS styles... */
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="status-bar">
+    <div>
+      <strong>📊 Camarilla Dashboard</strong> · Data: <span id="dataDate">—</span>
+    </div>
+    <div>
+      <span class="refresh-badge" id="refreshStatus">⏰ Next refresh: 10:00 PM IST</span>
+    </div>
+  </div>
+  <div id="cardsContainer" class="cards-grid"></div>
+</div>
+
+<script>
+// ============================================================
+// ⭐ EMBEDDED DATA - Replace this with your latest data
+// Run the Python script below to generate this JSON automatically
+// ============================================================
+const EMBEDDED_DATA = {
+  source_date: "2026-04-15",
+  applies_to_date: "2026-04-16",
+  data: [
+    // Example data - REPLACE WITH YOUR ACTUAL DATA FROM PROXY
+    // Run: python fetch_and_save.py  (script provided below)
+    {
+      ticker: "NIFTY",
+      instrument_name: "Nifty 50 Index",
+      asset_type: "INDEX",
+      signal: "Long Breakout",
+      vol_regime: "Normal",
+      close_price: 22420,
+      h4_long_breakout: 22730,
+      h4_sl: 22650,
+      h3_reversal_sell: 22580,
+      h3_sl: 22730,
+      l3_reversal_buy: 22080,
+      l3_sl: 21980,
+      l4_short_breakout: 21820,
+      l4_sl: 21980,
+      expiry_date: "2026-04-24",
+      days_to_expiry: 8,
+      atr14: 180,
+      rsi14: 61,
+      garch_vol: 0.16,
+      source_date: "2026-04-15",
+      applies_to_date: "2026-04-16"
+    }
+    // Add ALL your instruments here
+  ]
+};
+
+// ============================================================
+// AUTO-REFRESH AT 10 PM IST
+// ============================================================
+function scheduleNightRefresh() {
+  const now = new Date();
+  const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  
+  // Set target to 22:00 (10 PM) IST
+  const target = new Date(istTime);
+  target.setHours(22, 0, 0, 0);
+  
+  // If already past 10 PM today, schedule for tomorrow
+  if (istTime >= target) {
+    target.setDate(target.getDate() + 1);
+  }
+  
+  const msUntilRefresh = target - istTime;
+  const hoursLeft = Math.floor(msUntilRefresh / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((msUntilRefresh % (3600000)) / 60000);
+  
+  document.getElementById('refreshStatus').innerHTML = `⏰ Next refresh: 10:00 PM IST (in ${hoursLeft}h ${minutesLeft}m)`;
+  
+  setTimeout(() => {
+    // Reload the entire page at 10 PM
+    location.reload();
+  }, msUntilRefresh);
+}
+
+// ============================================================
+// RENDER CARDS FROM EMBEDDED DATA
+// ============================================================
+function fmt(v, d = 2) {
+  if (v == null || isNaN(v)) return '—';
+  return Number(v).toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function getSignalClass(signal) {
+  if (signal === "Long Breakout") return "sig-long";
+  if (signal === "Short Breakdown") return "sig-short";
+  if (signal === "Buy Reversal") return "sig-buyrev";
+  if (signal === "Sell Reversal") return "sig-sellrev";
+  return "sig-neutral";
+}
+
+function computeTargets(row) {
+  const h4 = row.h4_long_breakout;
+  const h3 = row.h3_reversal_sell;
+  const l3 = row.l3_reversal_buy;
+  const l4 = row.l4_short_breakout;
+  
+  let longTarget1 = null, longTarget2 = null, longTarget3 = null;
+  let reversal_sellTarget1 = null, reversal_sellTarget2 = null, reversal_sellTarget3 = null;
+  let reversal_buyTarget1 = null, reversal_buyTarget2 = null, reversal_buyTarget3 = null;
+  let shortTarget1 = null, shortTarget2 = null, shortTarget3 = null;
+  
+  const reversalRange = (h3 != null && l3 != null && h3 > 0 && l3 > 0) ? h3 - l3 : null;
+  const rangeH = (h4 != null && h3 != null && h4 > 0 && h3 > 0) ? h4 - h3 : null;
+  const rangeL = (l3 != null && l4 != null && l3 > 0 && l4 > 0) ? l3 - l4 : null;
+  
+  // Long Breakout Targets
+  if (rangeH != null && rangeH > 0) {
+    longTarget1 = h4 + rangeH * 0.5;
+    longTarget2 = h4 + rangeH * 1.0;
+    longTarget3 = h4 + rangeH * 1.5;
+  }
+  
+  // Reversal Sell Targets
+  if (reversalRange != null && reversalRange > 0) {
+    reversal_sellTarget1 = h3 - reversalRange * 0.382;
+    reversal_sellTarget2 = h3 - reversalRange * 0.618;
+    reversal_sellTarget3 = l3;
+  }
+  
+  // Reversal Buy Targets
+  if (reversalRange != null && reversalRange > 0) {
+    reversal_buyTarget1 = l3 + reversalRange * 0.382;
+    reversal_buyTarget2 = l3 + reversalRange * 0.618;
+    reversal_buyTarget3 = h3;
+  }
+  
+  // Short Breakdown Targets
+  if (rangeL != null && rangeL > 0) {
+    shortTarget1 = l4 - rangeL * 0.5;
+    shortTarget2 = l4 - rangeL * 1.0;
+    shortTarget3 = l4 - rangeL * 1.5;
+  }
+  
+  return { longTarget1, longTarget2, longTarget3, reversal_sellTarget1, reversal_sellTarget2, reversal_sellTarget3, reversal_buyTarget1, reversal_buyTarget2, reversal_buyTarget3, shortTarget1, shortTarget2, shortTarget3 };
+}
+
+function renderOneCard(r) {
+  const targets = computeTargets(r);
+  const signalClass = getSignalClass(r.signal);
+  const volMark = r.vol_regime === 'High' ? '⚡ High Vol' : (r.vol_regime === 'Low' ? '⬇️ Low Vol' : '● Normal Vol');
+  const expiryText = r.expiry_date && r.expiry_date !== '1900-01-01' ? r.expiry_date : (r.asset_type === 'FUTURES' ? 'Futures' : 'Equity');
+  const garchPct = r.garch_vol != null ? (r.garch_vol * 100).toFixed(1) + '%' : '—';
+  
+  return `<div style="background:white;border-radius:16px;border:1px solid #e2edf7;overflow:hidden;">
+    <div style="padding:14px 18px;background:#f4f9fe;border-bottom:1px solid #e9f0f6;">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-size:20px;font-weight:700;">${r.ticker}</span>
+        <span style="background:${signalClass.includes('long')?'#e1f7ed':signalClass.includes('short')?'#ffe8e6':'#f0f2f5'};padding:4px 12px;border-radius:20px;font-size:11px;">${r.signal}</span>
+      </div>
+      <div style="font-size:10px;color:#526f92;margin-top:6px;">${r.instrument_name || ''} · ${volMark} · ${expiryText}</div>
+    </div>
+    <div style="overflow-x:auto;padding:12px;">
+      <table style="width:100%;border-collapse:collapse;min-width:500px;">
+        <thead><tr style="background:#f8fafd;">
+          <th style="padding:10px;text-align:left;font-size:10px;">Strategy</th>
+          <th style="padding:10px;text-align:center;font-size:10px;color:#1f7b4d;">LONG</th>
+          <th style="padding:10px;text-align:center;font-size:10px;color:#c68400;">REV SELL</th>
+          <th style="padding:10px;text-align:center;font-size:10px;color:#2a6e9e;">REV BUY</th>
+          <th style="padding:10px;text-align:center;font-size:10px;color:#c73b2a;">SHORT</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;font-size:11px;font-weight:600;">⚡ Pivot</td>
+            <td style="padding:8px;text-align:center;color:#1f7b4d;font-weight:600;">${fmt(r.h4_long_breakout)}</td>
+            <td style="padding:8px;text-align:center;color:#c68400;font-weight:600;">${fmt(r.h3_reversal_sell)}</td>
+            <td style="padding:8px;text-align:center;color:#2a6e9e;font-weight:600;">${fmt(r.l3_reversal_buy)}</td>
+            <td style="padding:8px;text-align:center;color:#c73b2a;font-weight:600;">${fmt(r.l4_short_breakout)}</td>
+          </tr>
+          <tr style="background:#f9fbfe;"><td style="padding:8px;font-size:11px;font-weight:600;">🛑 SL</td>
+            <td style="padding:8px;text-align:center;">${fmt(r.h4_sl)}</td><td style="padding:8px;text-align:center;">${fmt(r.h3_sl)}</td>
+            <td style="padding:8px;text-align:center;">${fmt(r.l3_sl)}</td><td style="padding:8px;text-align:center;">${fmt(r.l4_sl)}</td>
+          </tr>
+          <tr><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T1</td>
+            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget1 ? fmt(targets.longTarget1) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget1 ? fmt(targets.reversal_sellTarget1) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget1 ? fmt(targets.reversal_buyTarget1) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget1 ? fmt(targets.shortTarget1) : '—'}</td>
+          </tr>
+          <tr style="background:#f9fbfe;"><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T2</td>
+            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget2 ? fmt(targets.longTarget2) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget2 ? fmt(targets.reversal_sellTarget2) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget2 ? fmt(targets.reversal_buyTarget2) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget2 ? fmt(targets.shortTarget2) : '—'}</td>
+          </tr>
+          <tr><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T3</td>
+            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget3 ? fmt(targets.longTarget3) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget3 ? fmt(targets.reversal_sellTarget3) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget3 ? fmt(targets.reversal_buyTarget3) : '—'}</td>
+            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget3 ? fmt(targets.shortTarget3) : '—'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:10px 16px;background:#f9fbfe;border-top:1px solid #e7eef6;font-size:10px;display:flex;justify-content:space-between;">
+      <span>📐 OHLC: ${r.source_date} → Trade: ${r.applies_to_date}</span>
+      <span>RSI: ${fmt(r.rsi14,1)} | GARCH: ${garchPct}</span>
+    </div>
+  </div>`;
+}
+
+function renderDashboard() {
+  document.getElementById('dataDate').innerText = `${EMBEDDED_DATA.source_date} → ${EMBEDDED_DATA.applies_to_date}`;
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = EMBEDDED_DATA.data.map(r => renderOneCard(r)).join('');
+}
+
+// Initialize
+renderDashboard();
+scheduleNightRefresh();
+</script>
+</body>
+</html>
