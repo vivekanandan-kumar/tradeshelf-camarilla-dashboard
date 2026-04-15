@@ -2,241 +2,758 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NSE Camarilla · Static Dashboard (Auto-Refresh 10 PM)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>NSE Camarilla · Static Dashboard · 2026-04-15</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Your existing CSS styles here - same as original dashboard */
-  :root {
-    --bg:#f0f4f8; --bg2:#e8edf5; --bg3:#dde4ef;
-    --surf:#ffffff; --surf2:#f5f8fc; --bdr:#d0d9ea;
-    --txt:#1a2540; --dim:#8898b8; --mid:#4a5e82;
-    --acc:#1565c0; --green:#1b8a4c; --red:#c62828;
-    --yellow:#b45d00; --blue:#1565c0; --teal:#00695c;
-    --mono:'IBM Plex Mono', monospace;
-    --sans:'Outfit', sans-serif;
-  }
-  /* Add all your existing CSS styles here */
-  body { background: var(--bg); font-family: var(--sans); margin: 0; padding: 20px; }
-  .container { max-width: 1400px; margin: 0 auto; }
-  .status-bar { background: #eef2f7; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-  .refresh-badge { background: var(--green); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-family: var(--mono); }
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 20px; }
-  /* Add rest of your CSS styles... */
+:root {
+  --bg:#f0f4f8;--bg2:#e8edf5;--bg3:#dde4ef;
+  --surf:#ffffff;--surf2:#f5f8fc;--surf3:#edf1f8;
+  --bdr:#d0d9ea;--bdr2:#b8c5db;
+  --txt:#1a2540;--dim:#8898b8;--mid:#4a5e82;--soft:#2d4070;
+  --acc:#1565c0;--acc2:#1976d2;--glow:rgba(21,101,192,.12);
+  --green:#1b8a4c;--red:#c62828;--yellow:#b45d00;
+  --blue:#1565c0;--orange:#e65100;--purple:#6a1b9a;--teal:#00695c;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'Outfit',sans-serif;
+  --r:4px;--r2:8px;--r3:14px;
+  --tbh:56px;--dbh:62px;
+}
+.sig-lb  {color:#1b7a43; border-color:rgba(27,138,76,.35);background:rgba(27,138,76,.08);}
+.sig-sbd {color:#b71c1c; border-color:rgba(198,40,40,.35); background:rgba(198,40,40,.08);}
+.sig-br  {color:#0d47a1; border-color:rgba(21,101,192,.35);background:rgba(21,101,192,.08);}
+.sig-sr  {color:#b45d00; border-color:rgba(180,93,0,.35);  background:rgba(180,93,0,.08);}
+.sig-n   {color:var(--dim);border-color:var(--bdr2);       background:transparent;}
+.vr-high  {color:#b71c1c;border-color:rgba(198,40,40,.35); background:rgba(198,40,40,.07);}
+.vr-normal{color:#0d47a1;border-color:rgba(21,101,192,.25);background:rgba(21,101,192,.06);}
+.vr-low   {color:var(--mid);border-color:var(--bdr2);      background:rgba(74,94,130,.06);}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:13px;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 55% 35% at 10% 0%,rgba(21,101,192,.05) 0%,transparent 55%),
+             radial-gradient(ellipse 40% 30% at 90% 100%,rgba(106,27,154,.03) 0%,transparent 55%);}
+body>*{position:relative;z-index:1;}
+
+.topbar{position:sticky;top:0;z-index:400;height:var(--tbh);display:flex;align-items:stretch;
+  background:rgba(240,244,248,.97);border-bottom:1px solid var(--bdr);backdrop-filter:blur(20px);
+  box-shadow:0 1px 0 rgba(21,101,192,.07);}
+.logo{display:flex;align-items:center;gap:12px;padding:0 22px;min-width:180px;border-right:1px solid var(--bdr);}
+.logo-icon{width:32px;height:32px;flex-shrink:0;}
+.logo-icon svg{width:100%;height:100%;}
+.logo-name{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--acc);}
+.logo-tag{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:.12em;}
+.cat-wrap{display:flex;align-items:center;gap:6px;padding:0 16px;border-right:1px solid var(--bdr);}
+.cat-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--dim);text-transform:uppercase;margin-right:4px;}
+.cpill{font-family:var(--mono);font-size:8px;font-weight:600;padding:5px 12px;border-radius:30px;
+  border:1px solid var(--bdr2);background:transparent;color:var(--dim);cursor:pointer;letter-spacing:.08em;
+  text-transform:uppercase;transition:all .15s;}
+.cpill:hover{border-color:var(--mid);color:var(--mid);}
+.cpill.on        {background:rgba(21,101,192,.1);   border-color:var(--acc);   color:var(--acc);}
+.cpill.on.cf     {background:rgba(230,81,0,.1);     border-color:var(--orange);color:var(--orange);}
+.cpill.on.ce     {background:rgba(27,138,76,.1);    border-color:var(--green); color:var(--green);}
+.topbar-flex{flex:1;}
+.topbar-right{display:flex;align-items:center;gap:16px;padding:0 20px;border-left:1px solid var(--bdr);}
+.static-badge{font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:20px;
+  background:rgba(21,101,192,.08);color:var(--acc);border:1px solid rgba(21,101,192,.2);}
+.clock{font-family:var(--mono);font-size:11px;color:var(--mid);letter-spacing:.04em;}
+.btn-csv{font-family:var(--mono);font-size:8px;font-weight:600;padding:6px 14px;border-radius:var(--r2);
+  border:1px solid var(--bdr2);background:transparent;color:var(--mid);cursor:pointer;letter-spacing:.1em;
+  text-transform:uppercase;transition:all .15s;}
+.btn-csv:hover{border-color:var(--acc);color:var(--acc);}
+
+.datebar{height:var(--dbh);display:flex;align-items:stretch;background:var(--bg2);
+  border-bottom:1px solid var(--bdr);overflow:hidden;}
+.db-left{display:flex;flex-direction:column;justify-content:center;padding:0 20px;
+  border-right:1px solid var(--bdr);min-width:200px;gap:3px;flex-shrink:0;}
+.db-src{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;}
+.db-src span{color:var(--mid);}
+.db-trade{display:flex;align-items:baseline;gap:10px;}
+.db-trade-date{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt);letter-spacing:.01em;}
+.db-trade-lbl{font-family:var(--mono);font-size:8px;font-weight:600;padding:3px 9px;border-radius:30px;
+  letter-spacing:.1em;background:rgba(27,138,76,.09);border:1px solid rgba(27,138,76,.22);
+  color:var(--green);white-space:nowrap;}
+.db-strip-outer{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;min-width:0;}
+.db-strip-outer::before,.db-strip-outer::after{content:'';position:absolute;top:0;bottom:0;width:36px;z-index:10;pointer-events:none;}
+.db-strip-outer::before{left:0;background:linear-gradient(90deg,var(--bg2),transparent);}
+.db-strip-outer::after{right:0;background:linear-gradient(270deg,var(--bg2),transparent);}
+.db-strip{display:flex;align-items:center;gap:5px;padding:0 40px;overflow-x:auto;
+  scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex:1;}
+.db-strip::-webkit-scrollbar{display:none;}
+.dpill{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 14px;border-radius:var(--r2);border:1px solid var(--bdr);background:transparent;
+  cursor:pointer;transition:all .15s;min-width:70px;}
+.dpill:hover{border-color:var(--bdr2);background:rgba(21,101,192,.03);}
+.dpill.latest{border-color:rgba(27,138,76,.2);}
+.dpill.active{border-color:var(--acc);background:rgba(21,101,192,.08);
+  box-shadow:0 0 0 1px rgba(21,101,192,.12),0 0 14px rgba(21,101,192,.05);}
+.dpill.latest.active{border-color:var(--green);background:rgba(27,138,76,.07);
+  box-shadow:0 0 0 1px rgba(27,138,76,.12),0 0 14px rgba(27,138,76,.05);}
+.dpill-day{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
+.dpill-dt{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--mid);}
+.dpill-dot{width:4px;height:4px;border-radius:50%;background:var(--bdr2);margin-top:1px;}
+.dpill.active .dpill-day{color:var(--acc);}
+.dpill.active .dpill-dt{color:var(--txt);}
+.dpill.active .dpill-dot{background:var(--acc);}
+.dpill.latest .dpill-dot{background:var(--green);}
+.dpill.latest.active .dpill-day{color:var(--green);}
+.dpill.latest.active .dpill-dot{background:var(--green);}
+
+.summary{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--bdr);}
+.sum-card{padding:12px 16px;border-right:1px solid var(--bdr);cursor:pointer;transition:background .12s;position:relative;overflow:hidden;}
+.sum-card:last-child{border-right:none;}
+.sum-card:hover{background:rgba(21,101,192,.02);}
+.sum-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--sc,transparent);}
+.sum-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:3px;}
+.sum-val{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--sc,var(--txt));letter-spacing:-.03em;line-height:1;}
+.sum-sub{font-size:10px;color:var(--dim);margin-top:4px;}
+
+.layout{display:grid;grid-template-columns:188px 1fr;height:calc(100vh - var(--tbh) - var(--dbh) - 1px);}
+
+.sidebar{border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);}
+.sb-hdr{padding:10px 14px;border-bottom:1px solid var(--bdr);font-family:var(--mono);font-size:8px;
+  letter-spacing:.15em;color:var(--dim);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;}
+.sb-count{color:var(--acc);font-size:9px;}
+.sb-filters{padding:8px 10px;border-bottom:1px solid var(--bdr);display:flex;flex-direction:column;gap:2px;}
+.sbf{font-family:var(--mono);font-size:8px;padding:5px 8px;border-radius:var(--r);border:1px solid transparent;
+  background:transparent;color:var(--dim);cursor:pointer;text-align:left;letter-spacing:.05em;transition:all .1s;}
+.sbf:hover{background:var(--surf2);color:var(--mid);}
+.sbf.on{background:rgba(21,101,192,.06);border-color:rgba(21,101,192,.18);color:var(--acc);}
+.sb-list{flex:1;overflow-y:auto;}
+.sb-list::-webkit-scrollbar{width:3px;}
+.sb-list::-webkit-scrollbar-thumb{background:var(--bdr2);}
+.sb-item{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;cursor:pointer;
+  border-bottom:1px solid rgba(208,217,234,.5);transition:background .08s;}
+.sb-item:hover{background:var(--surf2);}
+.sb-item.active{background:rgba(21,101,192,.06);}
+.sb-tk{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--txt);}
+.sb-ty{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:1px;}
+
+.main{display:flex;flex-direction:column;overflow:hidden;}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0;flex-wrap:wrap;}
+.tab-btn{font-family:var(--mono);font-size:8px;font-weight:600;padding:0 20px;height:38px;border:none;
+  background:transparent;color:var(--dim);cursor:pointer;letter-spacing:.12em;text-transform:uppercase;
+  border-bottom:2px solid transparent;transition:all .12s;}
+.tab-btn:hover{color:var(--mid);}
+.tab-btn.active{color:var(--acc);border-bottom-color:var(--acc);}
+.tab-panel{display:none;flex:1;overflow-y:auto;padding:16px;}
+.tab-panel.active{display:block;}
+
+.sig{font-family:var(--mono);font-size:8px;font-weight:700;padding:3px 8px;border-radius:30px;border:1px solid;letter-spacing:.06em;}
+.vr{font-family:var(--mono);font-size:8px;font-weight:700;padding:3px 8px;border-radius:30px;border:1px solid;}
+
+.tbl-hdr2{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.tbl-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--acc);}
+.tbl-sub{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;}
+.tbl-wrap{border:1px solid var(--bdr);border-radius:var(--r2);overflow-x:auto;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;min-width:920px;}
+thead th{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+  padding:9px 10px;text-align:right;border-bottom:1px solid var(--bdr);background:var(--bg3);
+  cursor:pointer;white-space:nowrap;user-select:none;transition:color .1s;}
+thead th:first-child,thead th:nth-child(2),thead th:nth-child(3){text-align:left;}
+thead th:hover{color:var(--acc);}
+thead th.asc::after{content:' ↑';color:var(--acc);}
+thead th.desc::after{content:' ↓';color:var(--acc);}
+tbody tr{cursor:pointer;transition:background .08s;border-bottom:1px solid rgba(208,217,234,.5);}
+tbody tr:hover{background:rgba(21,101,192,.02);}
+tbody tr.sel{background:rgba(21,101,192,.06);}
+tbody td{padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--txt);}
+tbody td:first-child{text-align:left;font-weight:700;font-size:12px;}
+tbody td:nth-child(2),tbody td:nth-child(3){text-align:left;}
+td.g{color:var(--green);}td.r{color:var(--red);}td.b{color:var(--blue);}td.y{color:var(--yellow);}td.t{color:var(--teal);}td.d{color:var(--mid);}
+
+.det-ticker{font-family:var(--mono);font-size:20px;font-weight:700;}
+.det-name{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;}
+.cards2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;}
+.card-t{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:10px;opacity:.8;}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(208,217,234,.5);}
+.kv:last-child{border:none;}
+.kk{color:var(--dim);font-family:var(--mono);font-size:10px;}
+.kv_{font-family:var(--mono);font-size:12px;font-weight:600;}
+.mx-grid{display:grid;grid-template-columns:155px repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;}
+.mx-cell{background:var(--surf);padding:9px 10px;}
+.mx-hdr{background:var(--bg3);padding:9px 10px;font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;}
+.mx-chip{display:inline-block;margin:2px;padding:2px 7px;border-radius:30px;font-family:var(--mono);font-size:9px;background:rgba(21,101,192,.04);border:1px solid var(--bdr2);cursor:pointer;transition:background .1s;}
+.mx-chip:hover{background:rgba(21,101,192,.1);}
+.mx-guide{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;margin-top:14px;}
+.mx-guide .card-t{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:12px;opacity:.8;}
+.mx-guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:var(--mid);line-height:1.7;}
+
+.exp-strip{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.exp-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 14px;display:flex;flex-direction:column;gap:3px;min-width:145px;}
+.exp-tk{font-family:var(--mono);font-size:11px;font-weight:700;}
+.exp-sr{font-family:var(--mono);font-size:8px;color:var(--dim);}
+.exp-dt{font-family:var(--mono);font-size:9px;color:var(--mid);}
+.exp-dte{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-.03em;}
+.exp-dte.u{color:var(--red);}
+.exp-dte.n{color:var(--yellow);}
+.exp-dte.o{color:var(--green);}
+
+.vol-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:16px;}
+.vm-cell{background:var(--surf);padding:12px;text-align:center;}
+.vm-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:5px;}
+.vm-val{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.03em;}
+.vol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;margin-bottom:16px;}
+.vol-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px;cursor:pointer;transition:all .12s;position:relative;overflow:hidden;}
+.vol-card:hover{border-color:var(--bdr2);background:var(--surf2);}
+.vol-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--vc,transparent);}
+.vc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.vc-tk{font-family:var(--mono);font-size:13px;font-weight:700;}
+.vc-sc{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:2px;}
+.vs{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(208,217,234,.4);}
+.vs:last-child{border:none;}
+.vs-k{font-family:var(--mono);font-size:9px;color:var(--mid);}
+.vs-v{font-family:var(--mono);font-size:9px;font-weight:700;}
+
+.tcards-wrap{padding:2px 0;}
+.tcards-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(560px, 1fr));gap:20px;}
+@media (max-width: 1200px) { .tcards-grid { grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); } }
+@media (max-width: 1100px) { .tcards-grid { grid-template-columns: 1fr; } }
+.tcard{background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--r3);overflow-x:auto;font-family:var(--mono);transition:all .2s ease;}
+.tcard:hover{transform:translateY(-2px);box-shadow:0 12px 24px -12px rgba(0,0,0,0.15);border-color:var(--bdr);}
+.tcard-header{padding:14px 18px;background:var(--bg3);border-bottom:1px solid var(--bdr2);}
+.tcard-header-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.tcard-title{font-family:var(--sans);font-size:20px;font-weight:700;letter-spacing:.02em;color:var(--txt);}
+.tcard-subtitle{font-size:10px;color:var(--mid);letter-spacing:.06em;margin-top:4px;}
+.tcard-table{width:100%;border-collapse:collapse;min-width:500px;}
+.tcard-col-hd{font-size:9px;font-weight:700;letter-spacing:.06em;text-align:center;padding:10px 8px;text-transform:uppercase;border-bottom:1px solid var(--bdr2);white-space:nowrap;}
+.tcard-row-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--mid);padding:10px 12px;text-align:left;border-right:1px solid var(--bdr2);white-space:nowrap;}
+.tcard-cell{font-size:12px;font-weight:600;text-align:center;padding:10px 8px;border-right:1px solid rgba(208,217,234,.5);white-space:nowrap;}
+.tcard-cell:last-child{border-right:none;}
+.tcard-cell.g{color:var(--green);}
+.tcard-cell.y{color:var(--yellow);}
+.tcard-cell.b{color:var(--blue);}
+.tcard-cell.r{color:var(--red);}
+.tcard-cell.sl{color:var(--red);font-size:10px;}
+.tcard-row-alt{background:rgba(232,237,245,.4);}
+.tcard-footer{padding:10px 16px;background:var(--bg3);border-top:1px solid var(--bdr2);text-align:center;font-size:9px;color:var(--dim);letter-spacing:.08em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.ch-lb  {background:#cce8f4;color:#0d47a1;}
+.ch-rs  {background:#fff3cd;color:#7c4d00;}
+.ch-rb  {background:#d6e8ff;color:#0d47a1;}
+.ch-sbd {background:#ffd7d7;color:#8b0000;}
+.signal-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;border-radius:30px;}
+.signal-badge.sig-long{background:rgba(27,138,76,.12);color:var(--green);border:1px solid rgba(27,138,76,.3);}
+.signal-badge.sig-short{background:rgba(198,40,40,.12);color:var(--red);border:1px solid rgba(198,40,40,.3);}
+.signal-badge.sig-buyrev{background:rgba(21,101,192,.12);color:var(--blue);border:1px solid rgba(21,101,192,.3);}
+.signal-badge.sig-sellrev{background:rgba(180,93,0,.12);color:var(--yellow);border:1px solid rgba(180,93,0,.3);}
+.signal-badge.sig-neutral{background:var(--bg3);color:var(--dim);border:1px solid var(--bdr2);}
+.target-cell-val{font-family:var(--mono);font-weight:700;}
+.empty{text-align:center;padding:50px 20px;font-family:var(--mono);color:var(--dim);font-size:11px;}
+.empty-icon{font-size:22px;margin-bottom:10px;opacity:.2;}
+.sec-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:10px;opacity:.8;}
+.panel-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:12px;}
+.panel-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--acc);}
+.panel-sub{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:900px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}.summary{grid-template-columns:repeat(4,1fr);}}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="status-bar">
-    <div>
-      <strong>📊 Camarilla Dashboard</strong> · Data: <span id="dataDate">—</span>
-    </div>
-    <div>
-      <span class="refresh-badge" id="refreshStatus">⏰ Next refresh: 10:00 PM IST</span>
-    </div>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon"><svg viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,9 30,23 16,30 2,23 2,9" stroke="rgba(21,101,192,.25)" stroke-width="1" fill="none"/><polygon points="16,6 26,11 26,21 16,26 6,21 6,11" stroke="#1565c0" stroke-width="1.2" fill="rgba(21,101,192,.05)"/><circle cx="16" cy="16" r="3" fill="#1565c0"/></svg></div>
+    <div><div class="logo-name">NSE · CAM</div><div class="logo-tag">Camarilla + Volatility</div></div>
   </div>
-  <div id="cardsContainer" class="cards-grid"></div>
+  <div class="cat-wrap">
+    <span class="cat-lbl">Filter</span>
+    <button class="cpill on" onclick="setCat('all',this)">All</button>
+    <button class="cpill cf" onclick="setCat('FUTURES',this)">Futures</button>
+    <button class="cpill ce" onclick="setCat('EQUITY',this)">Stocks</button>
+  </div>
+  <div class="topbar-flex"></div>
+  <div class="topbar-right">
+    <div class="static-badge">📄 STATIC · 2026-04-15</div>
+    <div class="clock" id="clock">—</div>
+    <button class="btn-csv" onclick="downloadCSV()">↓ CSV</button>
+  </div>
+</div>
+
+<div class="datebar">
+  <div class="db-left">
+    <div class="db-src">Source OHLC: <span id="srcLbl">2026-04-15</span></div>
+    <div class="db-trade"><span class="db-trade-date">2026-04-16</span><span class="db-trade-lbl" id="todayBadge" style="display:inline-flex">▶ STATIC</span></div>
+  </div>
+  <div class="db-strip-outer">
+    <div class="db-strip" id="dateStrip"><div class="dpill latest active"><div class="dpill-day">LATEST</div><div class="dpill-dt">04/15</div><div class="dpill-dot"></div></div></div>
+  </div>
+  <div class="db-right"><div class="btn-load" style="background:var(--dim);cursor:default;opacity:0.5">Static Snapshot</div></div>
+</div>
+
+<div class="summary" id="summary" style="display:grid"></div>
+
+<div class="layout" id="mainLayout" style="display:grid">
+  <div class="sidebar">
+    <div class="sb-hdr">Instruments <span class="sb-count" id="sbCount"></span></div>
+    <div class="sb-filters">
+      <button class="sbf on" onclick="setSigF('all',this)">All signals</button>
+      <button class="sbf" onclick="setSigF('Long Breakout',this)">▲ Long Breakout</button>
+      <button class="sbf" onclick="setSigF('Short Breakdown',this)">▼ Short Breakdown</button>
+      <button class="sbf" onclick="setSigF('Buy Reversal',this)">◉ Buy Reversal</button>
+      <button class="sbf" onclick="setSigF('Sell Reversal',this)">◉ Sell Reversal</button>
+      <button class="sbf" onclick="setSigF('high',this)">⚡ High Vol</button>
+    </div>
+    <div class="sb-list" id="sbList"></div>
+  </div>
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="swTab('table',this)">Levels Table</button>
+      <button class="tab-btn" onclick="swTab('detail',this)">Instrument Detail</button>
+      <button class="tab-btn" onclick="swTab('matrix',this)">Signal Matrix</button>
+      <button class="tab-btn" onclick="swTab('vol',this)">Volatility Report</button>
+      <button class="tab-btn" onclick="swTab('tradingcard',this)" style="color:var(--teal)">📋 Trading Cards</button>
+    </div>
+    <div class="tab-panel active" id="tab-table"><div class="tbl-hdr2"><div><div class="tbl-title">Camarilla Pivot Levels</div><div class="tbl-sub">Static snapshot from 2026-04-15 OHLC → Trade: 2026-04-16</div></div></div><div class="tbl-wrap"><table><thead><tr><th id="th-ticker" onclick="sortBy('ticker')">Ticker</th><th id="th-asset_type" onclick="sortBy('asset_type')" style="text-align:left">Type</th><th id="th-signal" onclick="sortBy('signal')" style="text-align:left">Signal</th><th id="th-close_price" onclick="sortBy('close_price')">Close</th><th id="th-h4_long_breakout" onclick="sortBy('h4_long_breakout')">H4 Break</th><th id="th-h3_reversal_sell" onclick="sortBy('h3_reversal_sell')">H3 Sell</th><th id="th-l3_reversal_buy" onclick="sortBy('l3_reversal_buy')">L3 Buy</th><th id="th-l4_short_breakout" onclick="sortBy('l4_short_breakout')">L4 Break</th><th id="th-h4_sl" onclick="sortBy('h4_sl')">H4 SL</th><th id="th-l4_sl" onclick="sortBy('l4_sl')">L4 SL</th><th id="th-vol_regime" onclick="sortBy('vol_regime')">Vol</th><th id="th-rsi14" onclick="sortBy('rsi14')">RSI14</th><th id="th-atr14" onclick="sortBy('atr14')">ATR14</th><th id="th-garch_vol" onclick="sortBy('garch_vol')">GARCH%</th><th id="th-days_to_expiry" onclick="sortBy('days_to_expiry')">DTE</th><th id="th-expiry_date" onclick="sortBy('expiry_date')">Expiry</th></tr></thead><tbody id="tblBody"></tbody></table></div></div>
+    <div class="tab-panel" id="tab-detail"><div id="detailPane"><div class="empty"><div class="empty-icon">◈</div>Click any instrument to see full detail</div></div></div>
+    <div class="tab-panel" id="tab-matrix"><div id="matrixPane"></div></div>
+    <div class="tab-panel" id="tab-vol"><div id="volPane"></div></div>
+    <div class="tab-panel" id="tab-tradingcard"><div id="tradingCardPane"></div></div>
+  </div>
 </div>
 
 <script>
-// ============================================================
-// ⭐ EMBEDDED DATA - Replace this with your latest data
-// Run the Python script below to generate this JSON automatically
-// ============================================================
-const EMBEDDED_DATA = {
-  source_date: "2026-04-15",
-  applies_to_date: "2026-04-16",
-  data: [
-    // Example data - REPLACE WITH YOUR ACTUAL DATA FROM PROXY
-    // Run: python fetch_and_save.py  (script provided below)
-    {
-      ticker: "NIFTY",
-      instrument_name: "Nifty 50 Index",
-      asset_type: "INDEX",
-      signal: "Long Breakout",
-      vol_regime: "Normal",
-      close_price: 22420,
-      h4_long_breakout: 22730,
-      h4_sl: 22650,
-      h3_reversal_sell: 22580,
-      h3_sl: 22730,
-      l3_reversal_buy: 22080,
-      l3_sl: 21980,
-      l4_short_breakout: 21820,
-      l4_sl: 21980,
-      expiry_date: "2026-04-24",
-      days_to_expiry: 8,
-      atr14: 180,
-      rsi14: 61,
-      garch_vol: 0.16,
-      source_date: "2026-04-15",
-      applies_to_date: "2026-04-16"
+// ========== EMBEDDED DATA ==========
+const EMBEDDED_DATA = [{"ticker": "BANKNIFTY", "instrument_name": "Nifty Bank", "asset_type": "INDEX", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1032.6269, "high_price": 1048.6581, "low_price": 1006.3063, "close_price": 1034.4454, "h4_long_breakout": 1067.74, "h4_sl": 1041.92, "h3_reversal_sell": 1036.09, "h3_sl": 1061.92, "l3_reversal_buy": 1032.8, "l3_sl": 1006.98, "l4_short_breakout": 1001.15, "l4_sl": 1026.98, "signal": "Neutral", "atr14": 36.8817, "real_vol21": 0.238433, "garch_vol": 0.334306, "rsi14": 38.2347, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 42.3518, "range_pct": 4.09, "asset_type_rank": 1}, {"ticker": "NIFTY", "instrument_name": "Nifty 50", "asset_type": "INDEX", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1056.906, "high_price": 1078.232, "low_price": 1046.4378, "close_price": 1056.5314, "h4_long_breakout": 1084.02, "h4_sl": 1059.65, "h3_reversal_sell": 1055.27, "h3_sl": 1079.65, "l3_reversal_buy": 1057.79, "l3_sl": 1033.42, "l4_short_breakout": 1029.04, "l4_sl": 1053.42, "signal": "Sell Reversal", "atr14": 28.8306, "real_vol21": 0.194607, "garch_vol": 0.226407, "rsi14": 66.6944, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 31.7942, "range_pct": 3.01, "asset_type_rank": 1}, {"ticker": "BANKNIFTY", "instrument_name": "Nifty Bank", "asset_type": "FUTURES", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 49759.24, "high_price": 49958.03, "low_price": 49461.05, "close_price": 49709.54, "h4_long_breakout": 49992.88, "h4_sl": 49904.54, "h3_reversal_sell": 49836.21, "h3_sl": 49924.54, "l3_reversal_buy": 49582.87, "l3_sl": 49494.54, "l4_short_breakout": 49426.2, "l4_sl": 49514.54, "signal": "Neutral", "atr14": 36.8817, "real_vol21": 0.238433, "garch_vol": 0.334306, "rsi14": 38.2347, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "2026-04-28", "days_to_expiry": 13, "day_range": 496.98, "range_pct": 1.0, "asset_type_rank": 2}, {"ticker": "BANKNIFTY", "instrument_name": "Nifty Bank", "asset_type": "FUTURES", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 49782.43, "high_price": 49981.23, "low_price": 49484.24, "close_price": 49732.73, "h4_long_breakout": 50016.07, "h4_sl": 49927.74, "h3_reversal_sell": 49859.4, "h3_sl": 49947.74, "l3_reversal_buy": 49606.06, "l3_sl": 49517.72, "l4_short_breakout": 49449.39, "l4_sl": 49537.72, "signal": "Neutral", "atr14": 36.8817, "real_vol21": 0.238433, "garch_vol": 0.334306, "rsi14": 38.2347, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "2026-05-26", "days_to_expiry": 41, "day_range": 496.99, "range_pct": 1.0, "asset_type_rank": 2}, {"ticker": "NIFTY", "instrument_name": "Nifty 50", "asset_type": "FUTURES", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 21343.91, "high_price": 21429.14, "low_price": 21216.06, "close_price": 21322.6, "h4_long_breakout": 21449.79, "h4_sl": 21400.5, "h3_reversal_sell": 21371.2, "h3_sl": 21420.5, "l3_reversal_buy": 21274.0, "l3_sl": 21224.7, "l4_short_breakout": 21195.41, "l4_sl": 21244.7, "signal": "Neutral", "atr14": 28.8306, "real_vol21": 0.194607, "garch_vol": 0.226407, "rsi14": 66.6944, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "2026-05-26", "days_to_expiry": 41, "day_range": 213.08, "range_pct": 1.0, "asset_type_rank": 2}, {"ticker": "NIFTY", "instrument_name": "Nifty 50", "asset_type": "FUTURES", "sector": "Index", "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 21333.96, "high_price": 21419.2, "low_price": 21206.11, "close_price": 21312.65, "h4_long_breakout": 21439.85, "h4_sl": 21390.55, "h3_reversal_sell": 21361.25, "h3_sl": 21410.55, "l3_reversal_buy": 21264.05, "l3_sl": 21214.75, "l4_short_breakout": 21185.45, "l4_sl": 21234.75, "signal": "Neutral", "atr14": 28.8306, "real_vol21": 0.194607, "garch_vol": 0.226407, "rsi14": 66.6944, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "2026-04-28", "days_to_expiry": 13, "day_range": 213.09, "range_pct": 1.0, "asset_type_rank": 2}, {"ticker": "ADANIENT.NS", "instrument_name": "Adani Enterprises Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 975.3886, "high_price": 1000.1864, "low_price": 960.2345, "close_price": 980.7182, "h4_long_breakout": 1012.69, "h4_sl": 987.2, "h3_reversal_sell": 981.7, "h3_sl": 1007.2, "l3_reversal_buy": 979.73, "l3_sl": 954.24, "l4_short_breakout": 948.74, "l4_sl": 974.24, "signal": "Neutral", "atr14": 32.8216, "real_vol21": 0.180049, "garch_vol": 0.284599, "rsi14": 25.2277, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 39.9519, "range_pct": 4.07, "asset_type_rank": 3}, {"ticker": "ADANIPORTS.NS", "instrument_name": "Adani Ports and Special Economic Zone Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1022.588, "high_price": 1018.2527, "low_price": 984.0692, "close_price": 1013.2004, "h4_long_breakout": 1042.0, "h4_sl": 1017.3, "h3_reversal_sell": 1012.6, "h3_sl": 1037.3, "l3_reversal_buy": 1013.8, "l3_sl": 989.1, "l4_short_breakout": 984.4, "l4_sl": 1009.1, "signal": "Sell Reversal", "atr14": 34.1777, "real_vol21": 0.206673, "garch_vol": 0.360503, "rsi14": 45.1662, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 34.1835, "range_pct": 3.37, "asset_type_rank": 3}, {"ticker": "APOLLOHOSP.NS", "instrument_name": "Apollo Hospitals Enterprise Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1083.7542, "high_price": 1103.3442, "low_price": 1058.9702, "close_price": 1088.6974, "h4_long_breakout": 1123.1, "h4_sl": 1097.0, "h3_reversal_sell": 1090.9, "h3_sl": 1117.0, "l3_reversal_buy": 1086.49, "l3_sl": 1060.39, "l4_short_breakout": 1054.29, "l4_sl": 1080.39, "signal": "Neutral", "atr14": 32.3879, "real_vol21": 0.1876, "garch_vol": 0.209447, "rsi14": 45.5291, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 44.374, "range_pct": 4.08, "asset_type_rank": 3}, {"ticker": "ASIANPAINT.NS", "instrument_name": "Asian Paints Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 745.8583, "high_price": 759.1886, "low_price": 731.8623, "close_price": 743.5508, "h4_long_breakout": 768.58, "h4_sl": 744.82, "h3_reversal_sell": 741.07, "h3_sl": 764.82, "l3_reversal_buy": 746.04, "l3_sl": 722.28, "l4_short_breakout": 718.52, "l4_sl": 742.28, "signal": "Sell Reversal", "atr14": 25.3429, "real_vol21": 0.263455, "garch_vol": 0.393296, "rsi14": 20.84, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 27.3263, "range_pct": 3.68, "asset_type_rank": 3}, {"ticker": "AXISBANK.NS", "instrument_name": "Axis Bank Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 914.3348, "high_price": 911.7188, "low_price": 882.7256, "close_price": 909.2542, "h4_long_breakout": 935.2, "h4_sl": 911.21, "h3_reversal_sell": 907.23, "h3_sl": 931.21, "l3_reversal_buy": 911.28, "l3_sl": 887.29, "l4_short_breakout": 883.31, "l4_sl": 907.29, "signal": "Sell Reversal", "atr14": 32.9658, "real_vol21": 0.247197, "garch_vol": 0.277514, "rsi14": 79.0559, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 28.9932, "range_pct": 3.19, "asset_type_rank": 3}, {"ticker": "BAJAJ-AUTO.NS", "instrument_name": "Bajaj Auto Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1087.6938, "high_price": 1089.7767, "low_price": 1073.7994, "close_price": 1084.4735, "h4_long_breakout": 1103.26, "h4_sl": 1081.06, "h3_reversal_sell": 1078.87, "h3_sl": 1101.06, "l3_reversal_buy": 1090.08, "l3_sl": 1067.88, "l4_short_breakout": 1065.69, "l4_sl": 1087.88, "signal": "Sell Reversal", "atr14": 32.2062, "real_vol21": 0.188365, "garch_vol": 0.227779, "rsi14": 80.2937, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 15.9773, "range_pct": 1.47, "asset_type_rank": 3}, {"ticker": "BAJAJFINSV.NS", "instrument_name": "Bajaj Finserv Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1202.2831, "high_price": 1249.3606, "low_price": 1200.9354, "close_price": 1213.4835, "h4_long_breakout": 1250.12, "h4_sl": 1223.46, "h3_reversal_sell": 1216.8, "h3_sl": 1243.46, "l3_reversal_buy": 1210.17, "l3_sl": 1183.51, "l4_short_breakout": 1176.85, "l4_sl": 1203.51, "signal": "Neutral", "atr14": 46.0253, "real_vol21": 0.245573, "garch_vol": 0.307143, "rsi14": 36.9381, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 48.4252, "range_pct": 3.99, "asset_type_rank": 3}, {"ticker": "BAJFINANCE.NS", "instrument_name": "Bajaj Finance Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1141.6441, "high_price": 1149.0328, "low_price": 1122.2187, "close_price": 1146.1388, "h4_long_breakout": 1170.89, "h4_sl": 1147.2, "h3_reversal_sell": 1143.51, "h3_sl": 1167.2, "l3_reversal_buy": 1148.76, "l3_sl": 1125.08, "l4_short_breakout": 1121.39, "l4_sl": 1145.08, "signal": "Sell Reversal", "atr14": 31.8545, "real_vol21": 0.177248, "garch_vol": 0.22942, "rsi14": 63.744, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 26.8141, "range_pct": 2.34, "asset_type_rank": 3}, {"ticker": "BEL.NS", "instrument_name": "Bharat Electronics Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1010.6362, "high_price": 1036.7188, "low_price": 990.9685, "close_price": 1007.5181, "h4_long_breakout": 1042.68, "h4_sl": 1016.39, "h3_reversal_sell": 1010.1, "h3_sl": 1036.39, "l3_reversal_buy": 1004.94, "l3_sl": 978.65, "l4_short_breakout": 972.36, "l4_sl": 998.65, "signal": "Neutral", "atr14": 38.2194, "real_vol21": 0.223323, "garch_vol": 0.234607, "rsi14": 56.4973, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 45.7503, "range_pct": 4.54, "asset_type_rank": 3}, {"ticker": "BHARTIARTL.NS", "instrument_name": "Bharti Airtel Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1105.5732, "high_price": 1132.5126, "low_price": 1092.7042, "close_price": 1106.1103, "h4_long_breakout": 1138.0, "h4_sl": 1112.53, "h3_reversal_sell": 1107.06, "h3_sl": 1132.53, "l3_reversal_buy": 1105.16, "l3_sl": 1079.69, "l4_short_breakout": 1074.22, "l4_sl": 1099.69, "signal": "Neutral", "atr14": 39.119, "real_vol21": 0.285195, "garch_vol": 0.250226, "rsi14": 73.269, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 39.8084, "range_pct": 3.6, "asset_type_rank": 3}, {"ticker": "CIPLA.NS", "instrument_name": "Cipla Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 860.2143, "high_price": 860.57, "low_price": 841.6458, "close_price": 857.0314, "h4_long_breakout": 877.44, "h4_sl": 854.84, "h3_reversal_sell": 852.24, "h3_sl": 874.84, "l3_reversal_buy": 861.83, "l3_sl": 839.23, "l4_short_breakout": 836.62, "l4_sl": 859.23, "signal": "Sell Reversal", "atr14": 29.1021, "real_vol21": 0.276164, "garch_vol": 0.382708, "rsi14": 40.248, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 18.9242, "range_pct": 2.21, "asset_type_rank": 3}, {"ticker": "COALINDIA.NS", "instrument_name": "Coal India Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1084.0198, "high_price": 1105.315, "low_price": 1076.1398, "close_price": 1078.4336, "h4_long_breakout": 1104.48, "h4_sl": 1080.47, "h3_reversal_sell": 1076.46, "h3_sl": 1100.47, "l3_reversal_buy": 1080.41, "l3_sl": 1056.4, "l4_short_breakout": 1052.39, "l4_sl": 1076.4, "signal": "Sell Reversal", "atr14": 40.07, "real_vol21": 0.196206, "garch_vol": 0.341835, "rsi14": 28.7136, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 29.1752, "range_pct": 2.71, "asset_type_rank": 3}, {"ticker": "DRREDDY.NS", "instrument_name": "Dr. Reddy's Laboratories Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1014.8279, "high_price": 1044.6349, "low_price": 1017.6066, "close_price": 1018.5498, "h4_long_breakout": 1043.42, "h4_sl": 1019.7, "h3_reversal_sell": 1015.98, "h3_sl": 1039.7, "l3_reversal_buy": 1021.12, "l3_sl": 997.4, "l4_short_breakout": 993.68, "l4_sl": 1017.4, "signal": "Sell Reversal", "atr14": 33.1012, "real_vol21": 0.202211, "garch_vol": 0.707273, "rsi14": 54.3303, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 27.0283, "range_pct": 2.65, "asset_type_rank": 3}, {"ticker": "EICHERMOT.NS", "instrument_name": "Eicher Motors Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 852.6879, "high_price": 879.2497, "low_price": 841.89, "close_price": 854.7589, "h4_long_breakout": 885.31, "h4_sl": 860.17, "h3_reversal_sell": 855.03, "h3_sl": 880.17, "l3_reversal_buy": 854.48, "l3_sl": 829.35, "l4_short_breakout": 824.21, "l4_sl": 849.35, "signal": "Neutral", "atr14": 33.8444, "real_vol21": 0.401776, "garch_vol": 0.297376, "rsi14": 52.7368, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 37.3597, "range_pct": 4.37, "asset_type_rank": 3}, {"ticker": "ETERNAL.NS", "instrument_name": "ETERNAL LIMITED", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 913.1491, "high_price": 940.6203, "low_price": 910.88, "close_price": 915.8804, "h4_long_breakout": 942.24, "h4_sl": 918.15, "h3_reversal_sell": 914.06, "h3_sl": 938.15, "l3_reversal_buy": 917.7, "l3_sl": 893.61, "l4_short_breakout": 889.52, "l4_sl": 913.61, "signal": "Sell Reversal", "atr14": 34.4489, "real_vol21": 0.32019, "garch_vol": 0.34725, "rsi14": 51.8188, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 29.7403, "range_pct": 3.25, "asset_type_rank": 3}, {"ticker": "GRASIM.NS", "instrument_name": "Grasim Industries Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1104.9439, "high_price": 1125.9142, "low_price": 1103.4359, "close_price": 1110.2435, "h4_long_breakout": 1132.61, "h4_sl": 1109.52, "h3_reversal_sell": 1106.43, "h3_sl": 1129.52, "l3_reversal_buy": 1114.06, "l3_sl": 1090.97, "l4_short_breakout": 1087.88, "l4_sl": 1110.97, "signal": "Sell Reversal", "atr14": 35.6747, "real_vol21": 0.190139, "garch_vol": 0.326975, "rsi14": 42.1161, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 22.4783, "range_pct": 2.02, "asset_type_rank": 3}, {"ticker": "HCLTECH.NS", "instrument_name": "HCL Technologies Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 989.2505, "high_price": 1026.1571, "low_price": 980.7261, "close_price": 996.4247, "h4_long_breakout": 1031.41, "h4_sl": 1005.16, "h3_reversal_sell": 998.92, "h3_sl": 1025.16, "l3_reversal_buy": 993.93, "l3_sl": 967.68, "l4_short_breakout": 961.44, "l4_sl": 987.68, "signal": "Neutral", "atr14": 39.9075, "real_vol21": 0.26018, "garch_vol": 0.272891, "rsi14": 23.6609, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 45.431, "range_pct": 4.56, "asset_type_rank": 3}, {"ticker": "HDFCBANK.NS", "instrument_name": "HDFC Bank Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 813.7289, "high_price": 835.9745, "low_price": 796.1276, "close_price": 820.6329, "h4_long_breakout": 852.55, "h4_sl": 827.07, "h3_reversal_sell": 821.59, "h3_sl": 847.07, "l3_reversal_buy": 819.68, "l3_sl": 794.2, "l4_short_breakout": 788.72, "l4_sl": 814.2, "signal": "Neutral", "atr14": 33.4595, "real_vol21": 0.300375, "garch_vol": 0.299649, "rsi14": 28.6973, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 39.8469, "range_pct": 4.86, "asset_type_rank": 3}, {"ticker": "HDFCLIFE.NS", "instrument_name": "HDFC Life Insurance Company Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1073.064, "high_price": 1092.5498, "low_price": 1059.9684, "close_price": 1076.1785, "h4_long_breakout": 1104.1, "h4_sl": 1079.62, "h3_reversal_sell": 1075.14, "h3_sl": 1099.62, "l3_reversal_buy": 1077.22, "l3_sl": 1052.74, "l4_short_breakout": 1048.26, "l4_sl": 1072.74, "signal": "Sell Reversal", "atr14": 33.7899, "real_vol21": 0.243844, "garch_vol": 0.232485, "rsi14": 62.0853, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 32.5814, "range_pct": 3.03, "asset_type_rank": 3}, {"ticker": "HINDALCO.NS", "instrument_name": "Hindalco Industries Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1044.2502, "high_price": 1070.0642, "low_price": 1026.255, "close_price": 1039.4128, "h4_long_breakout": 1073.51, "h4_sl": 1047.48, "h3_reversal_sell": 1041.46, "h3_sl": 1067.48, "l3_reversal_buy": 1037.37, "l3_sl": 1011.34, "l4_short_breakout": 1005.32, "l4_sl": 1031.34, "signal": "Neutral", "atr14": 39.1954, "real_vol21": 0.249681, "garch_vol": 0.231756, "rsi14": 59.0073, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 43.8092, "range_pct": 4.21, "asset_type_rank": 3}, {"ticker": "HINDUNILVR.NS", "instrument_name": "Hindustan Unilever Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 981.3887, "high_price": 997.0691, "low_price": 954.1518, "close_price": 975.8343, "h4_long_breakout": 1009.44, "h4_sl": 983.54, "h3_reversal_sell": 977.64, "h3_sl": 1003.54, "l3_reversal_buy": 974.03, "l3_sl": 948.13, "l4_short_breakout": 942.23, "l4_sl": 968.13, "signal": "Neutral", "atr14": 34.8956, "real_vol21": 0.216892, "garch_vol": 0.32025, "rsi14": 21.9726, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 42.9173, "range_pct": 4.4, "asset_type_rank": 3}, {"ticker": "ICICIBANK.NS", "instrument_name": "ICICI Bank Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 956.5698, "high_price": 985.1971, "low_price": 943.36, "close_price": 956.8491, "h4_long_breakout": 989.86, "h4_sl": 964.11, "h3_reversal_sell": 958.35, "h3_sl": 984.11, "l3_reversal_buy": 955.34, "l3_sl": 929.59, "l4_short_breakout": 923.84, "l4_sl": 949.59, "signal": "Neutral", "atr14": 36.4971, "real_vol21": 0.314524, "garch_vol": 0.845277, "rsi14": 53.4586, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 41.8371, "range_pct": 4.37, "asset_type_rank": 3}, {"ticker": "INDIGO.NS", "instrument_name": "InterGlobe Aviation Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1075.886, "high_price": 1097.2673, "low_price": 1040.6553, "close_price": 1070.0307, "h4_long_breakout": 1111.17, "h4_sl": 1083.38, "h3_reversal_sell": 1075.6, "h3_sl": 1103.38, "l3_reversal_buy": 1064.46, "l3_sl": 1036.68, "l4_short_breakout": 1028.89, "l4_sl": 1056.68, "signal": "Neutral", "atr14": 35.1241, "real_vol21": 0.229041, "garch_vol": 0.36404, "rsi14": 54.4592, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 56.612, "range_pct": 5.29, "asset_type_rank": 3}, {"ticker": "INFY.NS", "instrument_name": "Infosys Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1092.4244, "high_price": 1120.5773, "low_price": 1065.351, "close_price": 1096.5118, "h4_long_breakout": 1136.89, "h4_sl": 1109.29, "h3_reversal_sell": 1101.7, "h3_sl": 1129.29, "l3_reversal_buy": 1091.32, "l3_sl": 1063.73, "l4_short_breakout": 1056.14, "l4_sl": 1083.73, "signal": "Neutral", "atr14": 39.0894, "real_vol21": 0.216919, "garch_vol": 0.273485, "rsi14": 57.0225, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 55.2263, "range_pct": 5.04, "asset_type_rank": 3}, {"ticker": "ITC.NS", "instrument_name": "ITC Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 902.6252, "high_price": 924.6184, "low_price": 882.8132, "close_price": 899.0808, "h4_long_breakout": 932.07, "h4_sl": 906.33, "h3_reversal_sell": 900.58, "h3_sl": 926.33, "l3_reversal_buy": 897.58, "l3_sl": 871.84, "l4_short_breakout": 866.09, "l4_sl": 891.84, "signal": "Neutral", "atr14": 34.6671, "real_vol21": 0.237544, "garch_vol": 0.367174, "rsi14": 48.3322, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 41.8052, "range_pct": 4.65, "asset_type_rank": 3}, {"ticker": "JIOFIN.NS", "instrument_name": "Jio Financial Services Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 886.215, "high_price": 889.1933, "low_price": 878.66, "close_price": 882.4909, "h4_long_breakout": 898.28, "h4_sl": 876.84, "h3_reversal_sell": 875.39, "h3_sl": 896.84, "l3_reversal_buy": 889.59, "l3_sl": 868.15, "l4_short_breakout": 866.7, "l4_sl": 888.15, "signal": "Sell Reversal", "atr14": 26.5605, "real_vol21": 0.225845, "garch_vol": 0.414629, "rsi14": 36.5104, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 10.5333, "range_pct": 1.19, "asset_type_rank": 3}, {"ticker": "JSWSTEEL.NS", "instrument_name": "JSW Steel Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1127.7285, "high_price": 1138.6501, "low_price": 1113.6474, "close_price": 1138.2438, "h4_long_breakout": 1162.0, "h4_sl": 1138.56, "h3_reversal_sell": 1135.12, "h3_sl": 1158.56, "l3_reversal_buy": 1141.37, "l3_sl": 1117.93, "l4_short_breakout": 1114.49, "l4_sl": 1137.93, "signal": "Sell Reversal", "atr14": 35.9184, "real_vol21": 0.231081, "garch_vol": 0.23125, "rsi14": 61.8554, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 25.0027, "range_pct": 2.2, "asset_type_rank": 3}, {"ticker": "KOTAKBANK.NS", "instrument_name": "Kotak Mahindra Bank Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1044.523, "high_price": 1050.5775, "low_price": 1024.9071, "close_price": 1050.1581, "h4_long_breakout": 1074.28, "h4_sl": 1050.75, "h3_reversal_sell": 1047.22, "h3_sl": 1070.75, "l3_reversal_buy": 1053.1, "l3_sl": 1029.57, "l4_short_breakout": 1026.04, "l4_sl": 1049.57, "signal": "Sell Reversal", "atr14": 34.0232, "real_vol21": 0.21578, "garch_vol": 0.242366, "rsi14": 59.8669, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 25.6704, "range_pct": 2.44, "asset_type_rank": 3}, {"ticker": "LT.NS", "instrument_name": "Larsen & Toubro Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 852.2232, "high_price": 864.4008, "low_price": 846.0064, "close_price": 857.8742, "h4_long_breakout": 877.99, "h4_sl": 855.46, "h3_reversal_sell": 852.93, "h3_sl": 875.46, "l3_reversal_buy": 862.82, "l3_sl": 840.29, "l4_short_breakout": 837.76, "l4_sl": 860.29, "signal": "Sell Reversal", "atr14": 24.0699, "real_vol21": 0.201819, "garch_vol": 0.291568, "rsi14": 22.4104, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 18.3944, "range_pct": 2.14, "asset_type_rank": 3}, {"ticker": "MARUTI.NS", "instrument_name": "Maruti Suzuki India Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 993.3489, "high_price": 1008.9112, "low_price": 979.6818, "close_price": 997.1868, "h4_long_breakout": 1023.26, "h4_sl": 999.24, "h3_reversal_sell": 995.22, "h3_sl": 1019.24, "l3_reversal_buy": 999.15, "l3_sl": 975.13, "l4_short_breakout": 971.11, "l4_sl": 995.13, "signal": "Sell Reversal", "atr14": 33.8416, "real_vol21": 0.15933, "garch_vol": 0.238079, "rsi14": 27.7415, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 29.2294, "range_pct": 2.93, "asset_type_rank": 3}, {"ticker": "MAXHEALTH.NS", "instrument_name": "Max Healthcare Institute Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1023.6047, "high_price": 1034.5298, "low_price": 1030.5169, "close_price": 1033.7566, "h4_long_breakout": 1045.96, "h4_sl": 1025.41, "h3_reversal_sell": 1024.86, "h3_sl": 1045.41, "l3_reversal_buy": 1042.65, "l3_sl": 1022.1, "l4_short_breakout": 1021.55, "l4_sl": 1042.1, "signal": "Sell Reversal", "atr14": 28.1528, "real_vol21": 0.23893, "garch_vol": 0.274099, "rsi14": 75.0169, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 4.0129, "range_pct": 0.39, "asset_type_rank": 3}, {"ticker": "M&M.NS", "instrument_name": "Mahindra & Mahindra Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1040.548, "high_price": 1044.4718, "low_price": 1027.9017, "close_price": 1038.2096, "h4_long_breakout": 1057.32, "h4_sl": 1035.04, "h3_reversal_sell": 1032.77, "h3_sl": 1055.04, "l3_reversal_buy": 1043.65, "l3_sl": 1021.37, "l4_short_breakout": 1019.1, "l4_sl": 1041.37, "signal": "Sell Reversal", "atr14": 32.0919, "real_vol21": 0.183194, "garch_vol": 0.347295, "rsi14": 45.5459, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 16.5701, "range_pct": 1.6, "asset_type_rank": 3}, {"ticker": "NESTLEIND.NS", "instrument_name": "Nestle India Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 899.5723, "high_price": 902.1301, "low_price": 889.9588, "close_price": 900.3308, "h4_long_breakout": 917.03, "h4_sl": 895.35, "h3_reversal_sell": 893.68, "h3_sl": 915.35, "l3_reversal_buy": 906.98, "l3_sl": 885.31, "l4_short_breakout": 883.64, "l4_sl": 905.31, "signal": "Sell Reversal", "atr14": 37.3043, "real_vol21": 0.286314, "garch_vol": 0.30257, "rsi14": 39.3351, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 12.1713, "range_pct": 1.35, "asset_type_rank": 3}, {"ticker": "NTPC.NS", "instrument_name": "NTPC Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 952.5766, "high_price": 987.0185, "low_price": 945.377, "close_price": 960.2843, "h4_long_breakout": 993.19, "h4_sl": 967.46, "h3_reversal_sell": 961.74, "h3_sl": 987.46, "l3_reversal_buy": 958.83, "l3_sl": 933.11, "l4_short_breakout": 927.38, "l4_sl": 953.11, "signal": "Neutral", "atr14": 30.5382, "real_vol21": 0.238715, "garch_vol": 0.278371, "rsi14": 47.1393, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 41.6415, "range_pct": 4.34, "asset_type_rank": 3}, {"ticker": "ONGC.NS", "instrument_name": "Oil & Natural Gas Corporation Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 960.151, "high_price": 985.8702, "low_price": 945.4674, "close_price": 963.2599, "h4_long_breakout": 995.48, "h4_sl": 969.93, "h3_reversal_sell": 964.37, "h3_sl": 989.93, "l3_reversal_buy": 962.15, "l3_sl": 936.59, "l4_short_breakout": 931.04, "l4_sl": 956.59, "signal": "Neutral", "atr14": 32.8369, "real_vol21": 0.22095, "garch_vol": 0.292878, "rsi14": 43.657, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 40.4028, "range_pct": 4.19, "asset_type_rank": 3}, {"ticker": "POWERGRID.NS", "instrument_name": "Power Grid Corporation of India Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1051.6509, "high_price": 1059.9835, "low_price": 1048.5538, "close_price": 1056.7076, "h4_long_breakout": 1072.99, "h4_sl": 1051.42, "h3_reversal_sell": 1049.85, "h3_sl": 1071.42, "l3_reversal_buy": 1063.56, "l3_sl": 1041.99, "l4_short_breakout": 1040.42, "l4_sl": 1061.99, "signal": "Sell Reversal", "atr14": 41.8334, "real_vol21": 0.300246, "garch_vol": 0.406622, "rsi14": 70.1419, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 11.4297, "range_pct": 1.08, "asset_type_rank": 3}, {"ticker": "RELIANCE.NS", "instrument_name": "Reliance Industries Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 993.6334, "high_price": 1018.7965, "low_price": 990.998, "close_price": 997.2717, "h4_long_breakout": 1022.56, "h4_sl": 998.74, "h3_reversal_sell": 994.92, "h3_sl": 1018.74, "l3_reversal_buy": 999.63, "l3_sl": 975.8, "l4_short_breakout": 971.98, "l4_sl": 995.8, "signal": "Sell Reversal", "atr14": 30.887, "real_vol21": 0.186212, "garch_vol": 0.41219, "rsi14": 47.6696, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 27.7985, "range_pct": 2.79, "asset_type_rank": 3}, {"ticker": "SBILIFE.NS", "instrument_name": "SBI Life Insurance Company Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 926.8579, "high_price": 940.8224, "low_price": 908.3355, "close_price": 933.6723, "h4_long_breakout": 961.54, "h4_sl": 937.07, "h3_reversal_sell": 932.61, "h3_sl": 957.07, "l3_reversal_buy": 934.74, "l3_sl": 910.27, "l4_short_breakout": 905.8, "l4_sl": 930.27, "signal": "Sell Reversal", "atr14": 34.42, "real_vol21": 0.293979, "garch_vol": 0.299301, "rsi14": 38.4158, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 32.4869, "range_pct": 3.48, "asset_type_rank": 3}, {"ticker": "SBIN.NS", "instrument_name": "State Bank of India", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1077.2673, "high_price": 1096.4112, "low_price": 1050.5126, "close_price": 1081.6793, "h4_long_breakout": 1116.92, "h4_sl": 1090.61, "h3_reversal_sell": 1084.3, "h3_sl": 1110.61, "l3_reversal_buy": 1079.06, "l3_sl": 1052.75, "l4_short_breakout": 1046.44, "l4_sl": 1072.75, "signal": "Neutral", "atr14": 31.0892, "real_vol21": 0.187218, "garch_vol": 0.261745, "rsi14": 82.8541, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 45.8986, "range_pct": 4.24, "asset_type_rank": 3}, {"ticker": "SHRIRAMFIN.NS", "instrument_name": "Shriram Finance Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 871.3609, "high_price": 878.0861, "low_price": 844.5462, "close_price": 868.7148, "h4_long_breakout": 897.16, "h4_sl": 872.55, "h3_reversal_sell": 867.94, "h3_sl": 892.55, "l3_reversal_buy": 869.49, "l3_sl": 844.88, "l4_short_breakout": 840.27, "l4_sl": 864.88, "signal": "Sell Reversal", "atr14": 31.5013, "real_vol21": 0.28446, "garch_vol": 0.494901, "rsi14": 52.3236, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 33.5399, "range_pct": 3.86, "asset_type_rank": 3}, {"ticker": "SUNPHARMA.NS", "instrument_name": "Sun Pharmaceutical Industries Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 996.7968, "high_price": 1020.7999, "low_price": 970.0591, "close_price": 994.9538, "h4_long_breakout": 1032.86, "h4_sl": 1005.88, "h3_reversal_sell": 998.91, "h3_sl": 1025.88, "l3_reversal_buy": 991.0, "l3_sl": 964.02, "l4_short_breakout": 957.05, "l4_sl": 984.02, "signal": "Neutral", "atr14": 35.9281, "real_vol21": 0.280705, "garch_vol": 0.2493, "rsi14": 44.2042, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 50.7408, "range_pct": 5.1, "asset_type_rank": 3}, {"ticker": "TATACONSUM.NS", "instrument_name": "TATA CONSUMER PRODUCTS LIMITED", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1045.3267, "high_price": 1079.1867, "low_price": 1041.4173, "close_price": 1051.8802, "h4_long_breakout": 1082.65, "h4_sl": 1057.46, "h3_reversal_sell": 1052.27, "h3_sl": 1077.46, "l3_reversal_buy": 1051.49, "l3_sl": 1026.3, "l4_short_breakout": 1021.11, "l4_sl": 1046.3, "signal": "Neutral", "atr14": 35.0431, "real_vol21": 0.282912, "garch_vol": 0.297582, "rsi14": 75.2936, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 37.7694, "range_pct": 3.59, "asset_type_rank": 3}, {"ticker": "TATASTEEL.NS", "instrument_name": "Tata Steel Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1052.0076, "high_price": 1060.3053, "low_price": 1040.2673, "close_price": 1049.1712, "h4_long_breakout": 1070.19, "h4_sl": 1047.44, "h3_reversal_sell": 1044.68, "h3_sl": 1067.44, "l3_reversal_buy": 1053.66, "l3_sl": 1030.91, "l4_short_breakout": 1028.15, "l4_sl": 1050.91, "signal": "Sell Reversal", "atr14": 33.4161, "real_vol21": 0.155961, "garch_vol": 0.269789, "rsi14": 39.7321, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 20.038, "range_pct": 1.91, "asset_type_rank": 3}, {"ticker": "TCS.NS", "instrument_name": "Tata Consultancy Services Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1071.8538, "high_price": 1075.2201, "low_price": 1056.0827, "close_price": 1064.2159, "h4_long_breakout": 1084.74, "h4_sl": 1062.11, "h3_reversal_sell": 1059.48, "h3_sl": 1082.11, "l3_reversal_buy": 1068.95, "l3_sl": 1046.32, "l4_short_breakout": 1043.69, "l4_sl": 1066.32, "signal": "Sell Reversal", "atr14": 32.4169, "real_vol21": 0.23322, "garch_vol": 0.299446, "rsi14": 40.8524, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 19.1374, "range_pct": 1.8, "asset_type_rank": 3}, {"ticker": "TECHM.NS", "instrument_name": "Tech Mahindra Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 841.0829, "high_price": 844.2112, "low_price": 826.5089, "close_price": 836.1519, "h4_long_breakout": 855.89, "h4_sl": 833.45, "h3_reversal_sell": 831.02, "h3_sl": 853.45, "l3_reversal_buy": 841.28, "l3_sl": 818.85, "l4_short_breakout": 816.42, "l4_sl": 838.85, "signal": "Sell Reversal", "atr14": 30.722, "real_vol21": 0.213316, "garch_vol": 0.244066, "rsi14": 30.5449, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 17.7023, "range_pct": 2.12, "asset_type_rank": 3}, {"ticker": "TITAN.NS", "instrument_name": "Titan Company Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1020.643, "high_price": 1045.873, "low_price": 995.0351, "close_price": 1024.4844, "h4_long_breakout": 1062.45, "h4_sl": 1035.46, "h3_reversal_sell": 1028.46, "h3_sl": 1055.46, "l3_reversal_buy": 1020.5, "l3_sl": 993.51, "l4_short_breakout": 986.52, "l4_sl": 1013.51, "signal": "Neutral", "atr14": 31.4244, "real_vol21": 0.183041, "garch_vol": 0.332372, "rsi14": 31.9113, "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 50.8379, "range_pct": 4.96, "asset_type_rank": 3}, {"ticker": "TMPV.NS", "instrument_name": "Tata Motors Passenger Vehicles Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 833.9711, "high_price": 842.6941, "low_price": 832.8579, "close_price": 836.1385, "h4_long_breakout": 851.55, "h4_sl": 830.2, "h3_reversal_sell": 828.84, "h3_sl": 850.2, "l3_reversal_buy": 843.43, "l3_sl": 822.08, "l4_short_breakout": 820.73, "l4_sl": 842.08, "signal": "Sell Reversal", "atr14": 29.2646, "real_vol21": 0.247442, "garch_vol": 0.363729, "rsi14": 21.5754, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 9.8362, "range_pct": 1.18, "asset_type_rank": 3}, {"ticker": "TRENT.NS", "instrument_name": "Trent Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 855.9937, "high_price": 867.5937, "low_price": 844.6538, "close_price": 860.8157, "h4_long_breakout": 883.43, "h4_sl": 860.28, "h3_reversal_sell": 857.12, "h3_sl": 880.28, "l3_reversal_buy": 864.51, "l3_sl": 841.35, "l4_short_breakout": 838.2, "l4_sl": 861.35, "signal": "Sell Reversal", "atr14": 30.3032, "real_vol21": 0.244603, "garch_vol": 0.327342, "rsi14": 25.4575, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 22.9399, "range_pct": 2.66, "asset_type_rank": 3}, {"ticker": "ULTRACEMCO.NS", "instrument_name": "UltraTech Cement Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1146.4075, "high_price": 1162.3397, "low_price": 1155.5754, "close_price": 1156.9388, "h4_long_breakout": 1170.66, "h4_sl": 1149.73, "h3_reversal_sell": 1148.8, "h3_sl": 1169.73, "l3_reversal_buy": 1165.08, "l3_sl": 1144.15, "l4_short_breakout": 1143.22, "l4_sl": 1164.15, "signal": "Sell Reversal", "atr14": 39.0271, "real_vol21": 0.166929, "garch_vol": 0.28296, "rsi14": 56.6807, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 6.7643, "range_pct": 0.58, "asset_type_rank": 3}, {"ticker": "WIPRO.NS", "instrument_name": "Wipro Limited", "asset_type": "EQUITY", "sector": null, "lot_size": null, "fo_eligible": null, "source_date": "2026-04-15", "applies_to_date": "2026-04-16", "open_price": 1068.4357, "high_price": 1082.5924, "low_price": 1049.2348, "close_price": 1069.404, "h4_long_breakout": 1097.75, "h4_sl": 1073.16, "h3_reversal_sell": 1068.58, "h3_sl": 1093.16, "l3_reversal_buy": 1070.23, "l3_sl": 1045.64, "l4_short_breakout": 1041.06, "l4_sl": 1065.64, "signal": "Sell Reversal", "atr14": 36.2036, "real_vol21": 0.268305, "garch_vol": 0.252297, "rsi14": 40.8588, "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "expiry_date": "1900-01-01", "days_to_expiry": -46125, "day_range": 33.3576, "range_pct": 3.12, "asset_type_rank": 3}];
+const EMBEDDED_SUMMARY = [{"asset_type": "EQUITY", "signal": "Neutral", "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "instrument_count": 20, "tickers": "ADANIENT.NS,APOLLOHOSP.NS,BAJAJFINSV.NS,BEL.NS,BHARTIARTL.NS,EICHERMOT.NS,HCLTECH.NS,HDFCBANK.NS,HINDALCO.NS,HINDUNILVR.NS,ICICIBANK.NS,INDIGO.NS,INFY.NS,ITC.NS,NTPC.NS,ONGC.NS,SBIN.NS,SUNPHARMA.NS,TATACONSUM.NS,TITAN.NS"}, {"asset_type": "EQUITY", "signal": "Sell Reversal", "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "instrument_count": 30, "tickers": "ADANIPORTS.NS,ASIANPAINT.NS,AXISBANK.NS,BAJAJ-AUTO.NS,BAJFINANCE.NS,CIPLA.NS,COALINDIA.NS,DRREDDY.NS,ETERNAL.NS,GRASIM.NS,HDFCLIFE.NS,JIOFIN.NS,JSWSTEEL.NS,KOTAKBANK.NS,LT.NS,MARUTI.NS,MAXHEALTH.NS,M&M.NS,NESTLEIND.NS,POWERGRID.NS,RELIANCE.NS,SBILIFE.NS,SHRIRAMFIN.NS,TATASTEEL.NS,TCS.NS,TECHM.NS,TMPV.NS,TRENT.NS,ULTRACEMCO.NS,WIPRO.NS"}, {"asset_type": "FUTURES", "signal": "Neutral", "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "instrument_count": 4, "tickers": "BANKNIFTY,BANKNIFTY,NIFTY,NIFTY"}, {"asset_type": "INDEX", "signal": "Neutral", "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "instrument_count": 1, "tickers": "BANKNIFTY"}, {"asset_type": "INDEX", "signal": "Sell Reversal", "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "instrument_count": 1, "tickers": "NIFTY"}];
+const EMBEDDED_EXPIRY = [];
+const STATIC_DATE = '2026-04-15';
+const STATIC_APPLIES = '2026-04-16';
+const STATIC_SOURCE = '2026-04-15';
+// ===================================
+
+let allData = EMBEDDED_DATA.filter(r => !(r.asset_type === 'INDEX' && r.expiry_date === '1900-01-01'));
+let filtered = [];
+let sortKey = 'asset_type_rank', sortDir = 1;
+let activeSig = 'all', activeCat = 'all';
+let selectedIdx = null;
+
+function tick() {
+    const ist = new Date(new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'}));
+    document.getElementById('clock').textContent = ist.toLocaleTimeString('en-IN', {hour12: false}) + ' IST';
+}
+setInterval(tick, 1000);
+tick();
+
+function swTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (id === 'tradingcard' && allData.length) renderTradingCards(allData);
+}
+
+function setCat(cat, btn) {
+    activeCat = cat;
+    document.querySelectorAll('.cpill').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    applyFilters();
+}
+
+function updateSummary(d) {
+    document.getElementById('sTotal').textContent = d.length;
+    document.getElementById('sLB').textContent = d.filter(r => r.signal === 'Long Breakout').length;
+    document.getElementById('sSBD').textContent = d.filter(r => r.signal === 'Short Breakdown').length;
+    document.getElementById('sBR').textContent = d.filter(r => r.signal === 'Buy Reversal').length;
+    document.getElementById('sSR').textContent = d.filter(r => r.signal === 'Sell Reversal').length;
+    document.getElementById('sHV').textContent = d.filter(r => r.vol_regime === 'High').length;
+    document.getElementById('sN').textContent = d.filter(r => r.signal === 'Neutral').length;
+}
+
+function applyFilters() {
+    let d = [...allData];
+    if (activeCat !== 'all') d = d.filter(r => r.asset_type === activeCat);
+    if (activeSig === 'high') d = d.filter(r => r.vol_regime === 'High');
+    else if (activeSig !== 'all') d = d.filter(r => r.signal === activeSig);
+    filtered = d;
+    sortArr();
+    renderTable();
+    renderSidebar(filtered);
+    document.getElementById('sbCount').textContent = filtered.length !== allData.length ? `(${filtered.length}/${allData.length})` : `(${allData.length})`;
+}
+
+function setSigF(f, btn) {
+    activeSig = f;
+    if (btn) {
+        document.querySelectorAll('.sbf').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
     }
-    // Add ALL your instruments here
-  ]
-};
-
-// ============================================================
-// AUTO-REFRESH AT 10 PM IST
-// ============================================================
-function scheduleNightRefresh() {
-  const now = new Date();
-  const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-  
-  // Set target to 22:00 (10 PM) IST
-  const target = new Date(istTime);
-  target.setHours(22, 0, 0, 0);
-  
-  // If already past 10 PM today, schedule for tomorrow
-  if (istTime >= target) {
-    target.setDate(target.getDate() + 1);
-  }
-  
-  const msUntilRefresh = target - istTime;
-  const hoursLeft = Math.floor(msUntilRefresh / (1000 * 60 * 60));
-  const minutesLeft = Math.floor((msUntilRefresh % (3600000)) / 60000);
-  
-  document.getElementById('refreshStatus').innerHTML = `⏰ Next refresh: 10:00 PM IST (in ${hoursLeft}h ${minutesLeft}m)`;
-  
-  setTimeout(() => {
-    // Reload the entire page at 10 PM
-    location.reload();
-  }, msUntilRefresh);
+    applyFilters();
 }
 
-// ============================================================
-// RENDER CARDS FROM EMBEDDED DATA
-// ============================================================
-function fmt(v, d = 2) {
-  if (v == null || isNaN(v)) return '—';
-  return Number(v).toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sigC = s => ({
+    'Long Breakout': 'sig-lb',
+    'Short Breakdown': 'sig-sbd',
+    'Buy Reversal': 'sig-br',
+    'Sell Reversal': 'sig-sr'
+}[s] || 'sig-n');
+
+const sigA = s => ({
+    'Long Breakout': 'LBO',
+    'Short Breakdown': 'SBD',
+    'Buy Reversal': 'BR',
+    'Sell Reversal': 'SR',
+    'Neutral': 'N'
+}[s] || '?');
+
+const fmt = (v, d = 2) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('en-IN', {minimumFractionDigits: d, maximumFractionDigits: d});
+
+function renderSidebar(data) {
+    document.getElementById('sbList').innerHTML = data.map(r => `<div class="sb-item" id="sb-${allData.indexOf(r)}" onclick="selectRow(${allData.indexOf(r)})"><div><div class="sb-tk">${r.ticker}</div><div class="sb-ty">${r.sector || r.asset_type || ''}</div></div><span class="sig ${sigC(r.signal)}">${sigA(r.signal)}</span></div>`).join('');
 }
 
-function getSignalClass(signal) {
-  if (signal === "Long Breakout") return "sig-long";
-  if (signal === "Short Breakdown") return "sig-short";
-  if (signal === "Buy Reversal") return "sig-buyrev";
-  if (signal === "Sell Reversal") return "sig-sellrev";
-  return "sig-neutral";
+function sortBy(k) {
+    if (sortKey === k) sortDir *= -1;
+    else { sortKey = k; sortDir = 1; }
+    document.querySelectorAll('thead th').forEach(t => t.classList.remove('asc', 'desc'));
+    const th = document.getElementById(`th-${k}`);
+    if (th) th.classList.add(sortDir === 1 ? 'asc' : 'desc');
+    sortArr();
+    renderTable();
+}
+
+function sortArr() {
+    filtered.sort((a, b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return (typeof av === 'string' ? av.localeCompare(bv) : (av - bv)) * sortDir;
+    });
+}
+
+function renderTable() {
+    const body = document.getElementById('tblBody');
+    if (!filtered.length) {
+        body.innerHTML = `<tr><td colspan="16" class="empty">No instruments match filter</td></tr>`;
+        return;
+    }
+    body.innerHTML = filtered.map(r => {
+        const gi = allData.indexOf(r);
+        const sc = {'Long Breakout': 'g', 'Short Breakdown': 'r', 'Buy Reversal': 'b', 'Sell Reversal': 'y'}[r.signal] || 'd';
+        const dte = r.days_to_expiry;
+        const dtc = dte != null && dte < 5 ? 'r' : (dte != null && dte < 10 ? 'y' : 'd');
+        const rc = r.rsi14 > 70 ? 'r' : (r.rsi14 < 30 ? 'g' : 'd');
+        const garch = r.garch_vol != null ? (r.garch_vol * 100).toFixed(1) + '%' : '—';
+        const gc = r.garch_vol > 0.30 ? 'r' : (r.garch_vol < 0.12 ? 't' : 'd');
+        return `<tr onclick="selectRow(${gi})" id="tr-${gi}" class="${gi === selectedIdx ? 'sel' : ''}">
+            <td>${r.ticker}</td>
+            <td class="d" style="font-size:8px">${r.asset_type || '—'}</td>
+            <td><span class="sig ${sigC(r.signal)}">${r.signal}</span></td>
+            <td class="${sc}">${fmt(r.close_price)}</td>
+            <td class="g">${fmt(r.h4_long_breakout)}</td>
+            <td class="y">${fmt(r.h3_reversal_sell)}</td>
+            <td class="b">${fmt(r.l3_reversal_buy)}</td>
+            <td class="r">${fmt(r.l4_short_breakout)}</td>
+            <td class="d">${fmt(r.h4_sl)}</td>
+            <td class="d">${fmt(r.l4_sl)}</td>
+            <td>${r.vol_regime ? `<span class="vr vr-${r.vol_regime.toLowerCase()}">${r.vol_regime} Vol</span>` : '—'}</td>
+            <td class="${rc}">${fmt(r.rsi14, 1)}</td>
+            <td class="d">${fmt(r.atr14, 1)}</td>
+            <td class="${gc}">${garch}</td>
+            <td class="${dtc}">${dte != null ? dte : '—'}</td>
+            <td class="d" style="font-size:9px">${r.expiry_date || '—'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function downloadCSV() {
+    if (!filtered.length) return;
+    const keys = ['ticker', 'asset_type', 'signal', 'close_price', 'h4_long_breakout', 'h3_reversal_sell', 'l3_reversal_buy', 'l4_short_breakout', 'h4_sl', 'l4_sl', 'vol_regime', 'rsi14', 'atr14', 'garch_vol', 'expiry_date', 'days_to_expiry'];
+    const rows = [keys.join(','), ...filtered.map(r => keys.map(k => r[k] != null ? r[k] : '').join(','))];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type: 'text/csv'}));
+    a.download = `camarilla_${STATIC_DATE}.csv`;
+    a.click();
+}
+
+function selectRow(idx) {
+    selectedIdx = idx;
+    document.querySelectorAll('tbody tr').forEach(t => t.classList.toggle('sel', parseInt(t.id.replace('tr-', '')) === idx));
+    document.querySelectorAll('.sb-item').forEach(el => el.classList.toggle('active', parseInt(el.id.replace('sb-', '')) === idx));
+    renderDetail(allData[idx]);
+    swTab('detail');
+}
+
+function renderDetail(r) {
+    const sigCol = s => ({
+        'Long Breakout': 'var(--green)',
+        'Short Breakdown': 'var(--red)',
+        'Buy Reversal': 'var(--blue)',
+        'Sell Reversal': 'var(--yellow)'
+    }[s] || 'var(--dim)');
+    document.getElementById('detailPane').innerHTML = `<div style="padding:16px"><div style="display:flex;justify-content:space-between;margin-bottom:16px"><div><div class="det-ticker">${r.ticker}</div><div class="det-name">${r.instrument_name || ''} · ${r.asset_type || ''}</div></div><div><span class="sig ${sigC(r.signal)}">${r.signal}</span>${r.vol_regime ? `<span class="vr vr-${r.vol_regime.toLowerCase()}" style="margin-left:8px">${r.vol_regime} Vol</span>` : ''}</div></div><div class="cards2"><div class="card"><div class="card-t">Camarilla Levels</div><div class="kv"><span class="kk">H4 Breakout</span><span class="kv_ g">${fmt(r.h4_long_breakout)}</span></div><div class="kv"><span class="kk">H4 SL</span><span class="kv_">${fmt(r.h4_sl)}</span></div><div class="kv"><span class="kk">H3 Reversal Sell</span><span class="kv_ y">${fmt(r.h3_reversal_sell)}</span></div><div class="kv"><span class="kk">H3 SL</span><span class="kv_">${fmt(r.h3_sl)}</span></div><div class="kv"><span class="kk">L3 Reversal Buy</span><span class="kv_ b">${fmt(r.l3_reversal_buy)}</span></div><div class="kv"><span class="kk">L3 SL</span><span class="kv_">${fmt(r.l3_sl)}</span></div><div class="kv"><span class="kk">L4 Breakdown</span><span class="kv_ r">${fmt(r.l4_short_breakout)}</span></div><div class="kv"><span class="kk">L4 SL</span><span class="kv_">${fmt(r.l4_sl)}</span></div></div><div class="card"><div class="card-t">Volatility</div><div class="kv"><span class="kk">ATR14</span><span class="kv_">${fmt(r.atr14, 1)}</span></div><div class="kv"><span class="kk">RSI14</span><span class="kv_ ${r.rsi14 > 70 ? 'r' : (r.rsi14 < 30 ? 'g' : '')}">${fmt(r.rsi14, 1)}</span></div><div class="kv"><span class="kk">GARCH Vol</span><span class="kv_">${r.garch_vol != null ? (r.garch_vol * 100).toFixed(1) + '%' : '—'}</span></div><div class="kv"><span class="kk">Expiry</span><span class="kv_">${r.expiry_date || '—'}</span></div><div class="kv"><span class="kk">DTE</span><span class="kv_">${r.days_to_expiry != null ? r.days_to_expiry : '—'}</span></div></div></div></div>`;
 }
 
 function computeTargets(row) {
-  const h4 = row.h4_long_breakout;
-  const h3 = row.h3_reversal_sell;
-  const l3 = row.l3_reversal_buy;
-  const l4 = row.l4_short_breakout;
-  
-  let longTarget1 = null, longTarget2 = null, longTarget3 = null;
-  let reversal_sellTarget1 = null, reversal_sellTarget2 = null, reversal_sellTarget3 = null;
-  let reversal_buyTarget1 = null, reversal_buyTarget2 = null, reversal_buyTarget3 = null;
-  let shortTarget1 = null, shortTarget2 = null, shortTarget3 = null;
-  
-  const reversalRange = (h3 != null && l3 != null && h3 > 0 && l3 > 0) ? h3 - l3 : null;
-  const rangeH = (h4 != null && h3 != null && h4 > 0 && h3 > 0) ? h4 - h3 : null;
-  const rangeL = (l3 != null && l4 != null && l3 > 0 && l4 > 0) ? l3 - l4 : null;
-  
-  // Long Breakout Targets
-  if (rangeH != null && rangeH > 0) {
-    longTarget1 = h4 + rangeH * 0.5;
-    longTarget2 = h4 + rangeH * 1.0;
-    longTarget3 = h4 + rangeH * 1.5;
-  }
-  
-  // Reversal Sell Targets
-  if (reversalRange != null && reversalRange > 0) {
-    reversal_sellTarget1 = h3 - reversalRange * 0.382;
-    reversal_sellTarget2 = h3 - reversalRange * 0.618;
-    reversal_sellTarget3 = l3;
-  }
-  
-  // Reversal Buy Targets
-  if (reversalRange != null && reversalRange > 0) {
-    reversal_buyTarget1 = l3 + reversalRange * 0.382;
-    reversal_buyTarget2 = l3 + reversalRange * 0.618;
-    reversal_buyTarget3 = h3;
-  }
-  
-  // Short Breakdown Targets
-  if (rangeL != null && rangeL > 0) {
-    shortTarget1 = l4 - rangeL * 0.5;
-    shortTarget2 = l4 - rangeL * 1.0;
-    shortTarget3 = l4 - rangeL * 1.5;
-  }
-  
-  return { longTarget1, longTarget2, longTarget3, reversal_sellTarget1, reversal_sellTarget2, reversal_sellTarget3, reversal_buyTarget1, reversal_buyTarget2, reversal_buyTarget3, shortTarget1, shortTarget2, shortTarget3 };
+    const h4 = row.h4_long_breakout;
+    const h3 = row.h3_reversal_sell;
+    const l3 = row.l3_reversal_buy;
+    const l4 = row.l4_short_breakout;
+    
+    let longTarget1 = null, longTarget2 = null, longTarget3 = null;
+    let reversal_sellTarget1 = null, reversal_sellTarget2 = null, reversal_sellTarget3 = null;
+    let reversal_buyTarget1 = null, reversal_buyTarget2 = null, reversal_buyTarget3 = null;
+    let shortTarget1 = null, shortTarget2 = null, shortTarget3 = null;
+    
+    const rangeH = (h4 != null && h3 != null && !isNaN(h4) && !isNaN(h3) && h4 > 0 && h3 > 0) ? h4 - h3 : null;
+    const rangeL = (l3 != null && l4 != null && !isNaN(l3) && !isNaN(l4) && l3 > 0 && l4 > 0) ? l3 - l4 : null;
+    const reversalRange = (h3 != null && l3 != null && !isNaN(h3) && !isNaN(l3) && h3 > 0 && l3 > 0) ? h3 - l3 : null;
+    const totalRange = (h4 != null && l4 != null && !isNaN(h4) && !isNaN(l4) && h4 > 0 && l4 > 0) ? h4 - l4 : null;
+    
+    if (rangeH != null && rangeH > 0) {
+        longTarget1 = h4 + rangeH * 0.5;
+        longTarget2 = h4 + rangeH * 1.0;
+        longTarget3 = h4 + rangeH * 1.5;
+    } else if (reversalRange != null && reversalRange > 0) {
+        longTarget1 = h4 + reversalRange * 0.382;
+        longTarget2 = h4 + reversalRange * 0.618;
+        longTarget3 = h4 + reversalRange * 1.0;
+    } else if (totalRange != null && totalRange > 0) {
+        longTarget1 = h4 + totalRange * 0.3;
+        longTarget2 = h4 + totalRange * 0.6;
+        longTarget3 = h4 + totalRange * 1.0;
+    }
+    
+    if (reversalRange != null && reversalRange > 0) {
+        reversal_sellTarget1 = h3 - reversalRange * 0.382;
+        reversal_sellTarget2 = h3 - reversalRange * 0.618;
+        reversal_sellTarget3 = l3;
+    } else if (rangeH != null && rangeH > 0 && h3 != null) {
+        reversal_sellTarget1 = h3 - rangeH * 0.5;
+        reversal_sellTarget2 = h3 - rangeH * 1.0;
+        reversal_sellTarget3 = h3 - rangeH * 1.5;
+    }
+    
+    if (reversalRange != null && reversalRange > 0) {
+        reversal_buyTarget1 = l3 + reversalRange * 0.382;
+        reversal_buyTarget2 = l3 + reversalRange * 0.618;
+        reversal_buyTarget3 = h3;
+    } else if (rangeL != null && rangeL > 0 && l3 != null) {
+        reversal_buyTarget1 = l3 + rangeL * 0.5;
+        reversal_buyTarget2 = l3 + rangeL * 1.0;
+        reversal_buyTarget3 = l3 + rangeL * 1.5;
+    }
+    
+    if (rangeL != null && rangeL > 0) {
+        shortTarget1 = l4 - rangeL * 0.5;
+        shortTarget2 = l4 - rangeL * 1.0;
+        shortTarget3 = l4 - rangeL * 1.5;
+    } else if (reversalRange != null && reversalRange > 0) {
+        shortTarget1 = l4 - reversalRange * 0.382;
+        shortTarget2 = l4 - reversalRange * 0.618;
+        shortTarget3 = l4 - reversalRange * 1.0;
+    }
+    
+    return { longTarget1, longTarget2, longTarget3, reversal_sellTarget1, reversal_sellTarget2, reversal_sellTarget3, reversal_buyTarget1, reversal_buyTarget2, reversal_buyTarget3, shortTarget1, shortTarget2, shortTarget3 };
+}
+
+function getSignalClass(signal) {
+    if (signal === "Long Breakout") return "sig-long";
+    if (signal === "Short Breakdown") return "sig-short";
+    if (signal === "Buy Reversal") return "sig-buyrev";
+    if (signal === "Sell Reversal") return "sig-sellrev";
+    return "sig-neutral";
 }
 
 function renderOneCard(r) {
-  const targets = computeTargets(r);
-  const signalClass = getSignalClass(r.signal);
-  const volMark = r.vol_regime === 'High' ? '⚡ High Vol' : (r.vol_regime === 'Low' ? '⬇️ Low Vol' : '● Normal Vol');
-  const expiryText = r.expiry_date && r.expiry_date !== '1900-01-01' ? r.expiry_date : (r.asset_type === 'FUTURES' ? 'Futures' : 'Equity');
-  const garchPct = r.garch_vol != null ? (r.garch_vol * 100).toFixed(1) + '%' : '—';
-  
-  return `<div style="background:white;border-radius:16px;border:1px solid #e2edf7;overflow:hidden;">
-    <div style="padding:14px 18px;background:#f4f9fe;border-bottom:1px solid #e9f0f6;">
-      <div style="display:flex;justify-content:space-between;">
-        <span style="font-size:20px;font-weight:700;">${r.ticker}</span>
-        <span style="background:${signalClass.includes('long')?'#e1f7ed':signalClass.includes('short')?'#ffe8e6':'#f0f2f5'};padding:4px 12px;border-radius:20px;font-size:11px;">${r.signal}</span>
-      </div>
-      <div style="font-size:10px;color:#526f92;margin-top:6px;">${r.instrument_name || ''} · ${volMark} · ${expiryText}</div>
-    </div>
-    <div style="overflow-x:auto;padding:12px;">
-      <table style="width:100%;border-collapse:collapse;min-width:500px;">
-        <thead><tr style="background:#f8fafd;">
-          <th style="padding:10px;text-align:left;font-size:10px;">Strategy</th>
-          <th style="padding:10px;text-align:center;font-size:10px;color:#1f7b4d;">LONG</th>
-          <th style="padding:10px;text-align:center;font-size:10px;color:#c68400;">REV SELL</th>
-          <th style="padding:10px;text-align:center;font-size:10px;color:#2a6e9e;">REV BUY</th>
-          <th style="padding:10px;text-align:center;font-size:10px;color:#c73b2a;">SHORT</th>
-        </tr></thead>
-        <tbody>
-          <tr><td style="padding:8px;font-size:11px;font-weight:600;">⚡ Pivot</td>
-            <td style="padding:8px;text-align:center;color:#1f7b4d;font-weight:600;">${fmt(r.h4_long_breakout)}</td>
-            <td style="padding:8px;text-align:center;color:#c68400;font-weight:600;">${fmt(r.h3_reversal_sell)}</td>
-            <td style="padding:8px;text-align:center;color:#2a6e9e;font-weight:600;">${fmt(r.l3_reversal_buy)}</td>
-            <td style="padding:8px;text-align:center;color:#c73b2a;font-weight:600;">${fmt(r.l4_short_breakout)}</td>
-          </tr>
-          <tr style="background:#f9fbfe;"><td style="padding:8px;font-size:11px;font-weight:600;">🛑 SL</td>
-            <td style="padding:8px;text-align:center;">${fmt(r.h4_sl)}</td><td style="padding:8px;text-align:center;">${fmt(r.h3_sl)}</td>
-            <td style="padding:8px;text-align:center;">${fmt(r.l3_sl)}</td><td style="padding:8px;text-align:center;">${fmt(r.l4_sl)}</td>
-          </tr>
-          <tr><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T1</td>
-            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget1 ? fmt(targets.longTarget1) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget1 ? fmt(targets.reversal_sellTarget1) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget1 ? fmt(targets.reversal_buyTarget1) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget1 ? fmt(targets.shortTarget1) : '—'}</td>
-          </tr>
-          <tr style="background:#f9fbfe;"><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T2</td>
-            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget2 ? fmt(targets.longTarget2) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget2 ? fmt(targets.reversal_sellTarget2) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget2 ? fmt(targets.reversal_buyTarget2) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget2 ? fmt(targets.shortTarget2) : '—'}</td>
-          </tr>
-          <tr><td style="padding:8px;font-size:11px;font-weight:600;">🎯 T3</td>
-            <td style="padding:8px;text-align:center;color:#1f7b4d;">${targets.longTarget3 ? fmt(targets.longTarget3) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c68400;">${targets.reversal_sellTarget3 ? fmt(targets.reversal_sellTarget3) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#2a6e9e;">${targets.reversal_buyTarget3 ? fmt(targets.reversal_buyTarget3) : '—'}</td>
-            <td style="padding:8px;text-align:center;color:#c73b2a;">${targets.shortTarget3 ? fmt(targets.shortTarget3) : '—'}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="padding:10px 16px;background:#f9fbfe;border-top:1px solid #e7eef6;font-size:10px;display:flex;justify-content:space-between;">
-      <span>📐 OHLC: ${r.source_date} → Trade: ${r.applies_to_date}</span>
-      <span>RSI: ${fmt(r.rsi14,1)} | GARCH: ${garchPct}</span>
-    </div>
-  </div>`;
+    const targets = computeTargets(r);
+    const signalClass = getSignalClass(r.signal);
+    const volMark = r.vol_regime === 'High' ? '⚡ High Vol' : (r.vol_regime === 'Low' ? '⬇️ Low Vol' : '● Normal Vol');
+    const isFutures = r.asset_type === 'FUTURES';
+    const isValidExpiry = r.expiry_date && r.expiry_date !== '1900-01-01';
+    let expiryText = '';
+    if (isFutures && isValidExpiry) {
+        expiryText = `${r.expiry_date} (DTE: ${r.days_to_expiry ?? '—'}d)`;
+    } else if (isFutures) {
+        expiryText = 'Futures (expiry TBD)';
+    } else {
+        expiryText = 'Equity';
+    }
+    const garchPct = r.garch_vol != null ? (r.garch_vol * 100).toFixed(1) + '%' : '—';
+    const hasLongTargets = targets.longTarget1 != null && !isNaN(targets.longTarget1);
+    const hasReversalSellTargets = targets.reversal_sellTarget1 != null && !isNaN(targets.reversal_sellTarget1);
+    const hasReversalBuyTargets = targets.reversal_buyTarget1 != null && !isNaN(targets.reversal_buyTarget1);
+    const hasShortTargets = targets.shortTarget1 != null && !isNaN(targets.shortTarget1);
+    
+    return `<div class="tcard">
+        <div class="tcard-header">
+            <div class="tcard-header-top">
+                <span class="tcard-title">${r.ticker}</span>
+                <span class="signal-badge ${signalClass}">${r.signal || 'Neutral'}</span>
+            </div>
+            <div class="tcard-subtitle">${r.instrument_name || r.asset_type || ''} · ${volMark} · ${expiryText}</div>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="tcard-table">
+                <thead><tr>
+                    <th class="tcard-col-hd" style="text-align:left;padding-left:10px">Strategy</th>
+                    <th class="tcard-col-hd ch-lb">LONG BREAKOUT<br><span style="font-weight:400;font-size:8px">(H4 Bullish)</span></th>
+                    <th class="tcard-col-hd ch-rs">REVERSAL SELL<br><span style="font-weight:400;font-size:8px">(H3 Resistance)</span></th>
+                    <th class="tcard-col-hd ch-rb">REVERSAL BUY<br><span style="font-weight:400;font-size:8px">(L3 Support)</span></th>
+                    <th class="tcard-col-hd ch-sbd">SHORT BREAKOUT<br><span style="font-weight:400;font-size:8px">(L4 Bearish)</span></th>
+                </tr></thead>
+                <tbody>
+                    <tr><td class="tcard-row-lbl">⚡ Pivot Levels</td>
+                        <td class="tcard-cell g">${fmt(r.h4_long_breakout)}</td>
+                        <td class="tcard-cell y">${fmt(r.h3_reversal_sell)}</td>
+                        <td class="tcard-cell b">${fmt(r.l3_reversal_buy)}</td>
+                        <td class="tcard-cell r">${fmt(r.l4_short_breakout)}</td>
+                    </tr>
+                    <tr class="tcard-row-alt"><td class="tcard-row-lbl">🛑 Stop Loss</td>
+                        <td class="tcard-cell sl">${fmt(r.h4_sl)}</td>
+                        <td class="tcard-cell sl">${fmt(r.h3_sl)}</td>
+                        <td class="tcard-cell sl">${fmt(r.l3_sl)}</td>
+                        <td class="tcard-cell sl">${fmt(r.l4_sl)}</td>
+                    </tr>
+                    <tr><td class="tcard-row-lbl">🎯 TARGET 1</td>
+                        <td class="tcard-cell g target-cell-val">${hasLongTargets ? fmt(targets.longTarget1) : '—'}</td>
+                        <td class="tcard-cell y target-cell-val">${hasReversalSellTargets ? fmt(targets.reversal_sellTarget1) : '—'}</td>
+                        <td class="tcard-cell b target-cell-val">${hasReversalBuyTargets ? fmt(targets.reversal_buyTarget1) : '—'}</td>
+                        <td class="tcard-cell r target-cell-val">${hasShortTargets ? fmt(targets.shortTarget1) : '—'}</td>
+                    </tr>
+                    <tr class="tcard-row-alt"><td class="tcard-row-lbl">🎯 TARGET 2</td>
+                        <td class="tcard-cell g target-cell-val">${hasLongTargets ? fmt(targets.longTarget2) : '—'}</td>
+                        <td class="tcard-cell y target-cell-val">${hasReversalSellTargets ? fmt(targets.reversal_sellTarget2) : '—'}</td>
+                        <td class="tcard-cell b target-cell-val">${hasReversalBuyTargets ? fmt(targets.reversal_buyTarget2) : '—'}</td>
+                        <td class="tcard-cell r target-cell-val">${hasShortTargets ? fmt(targets.shortTarget2) : '—'}</td>
+                    </tr>
+                    <tr><td class="tcard-row-lbl">🎯 TARGET 3</td>
+                        <td class="tcard-cell g target-cell-val">${hasLongTargets ? fmt(targets.longTarget3) : '—'}</td>
+                        <td class="tcard-cell y target-cell-val">${hasReversalSellTargets ? fmt(targets.reversal_sellTarget3) : '—'}</td>
+                        <td class="tcard-cell b target-cell-val">${hasReversalBuyTargets ? fmt(targets.reversal_buyTarget3) : '—'}</td>
+                        <td class="tcard-cell r target-cell-val">${hasShortTargets ? fmt(targets.shortTarget3) : '—'}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="tcard-footer">
+            <span>📐 OHLC: ${STATIC_SOURCE} → Trade: ${STATIC_APPLIES}</span>
+            <span>RSI: ${fmt(r.rsi14, 1)} | GARCH: ${garchPct} | ATR: ${fmt(r.atr14, 1)}</span>
+        </div>
+    </div>`;
 }
 
-function renderDashboard() {
-  document.getElementById('dataDate').innerText = `${EMBEDDED_DATA.source_date} → ${EMBEDDED_DATA.applies_to_date}`;
-  const container = document.getElementById('cardsContainer');
-  container.innerHTML = EMBEDDED_DATA.data.map(r => renderOneCard(r)).join('');
+function renderTradingCards(data) {
+    const pane = document.getElementById('tradingCardPane');
+    if (!data || !data.length) {
+        pane.innerHTML = `<div class="empty"><div class="empty-icon">◎</div>No data</div>`;
+        return;
+    }
+    pane.innerHTML = `<div class="tcards-wrap"><div class="panel-hd"><div><div class="panel-title">📋 Camarilla Trading Cards</div><div class="panel-sub">Static snapshot from ${STATIC_SOURCE} OHLC → Levels for: ${STATIC_APPLIES}</div></div><div class="tc-filter-row"><button class="cpill on" onclick="setTcFilter('all',this)">All</button><button class="cpill cf" onclick="setTcFilter('FUTURES',this)">Futures</button><button class="cpill ce" onclick="setTcFilter('EQUITY',this)">Stocks</button></div></div><div class="tcards-grid" id="tcGrid">${renderCardGrid(data)}</div></div>`;
 }
 
-// Initialize
-renderDashboard();
-scheduleNightRefresh();
+let tcFilterCat = 'all';
+function setTcFilter(cat, btn) {
+    tcFilterCat = cat;
+    document.querySelectorAll('.tcards-wrap .cpill').forEach(b => {
+        b.classList.remove('on', 'cf', 'ce');
+    });
+    btn.classList.add('on');
+    if (cat === 'FUTURES') btn.classList.add('cf');
+    if (cat === 'EQUITY') btn.classList.add('ce');
+    const gridDiv = document.getElementById('tcGrid');
+    if (gridDiv) gridDiv.innerHTML = renderCardGrid(allData);
+}
+
+function renderCardGrid(data) {
+    let filteredData = [...data];
+    if (tcFilterCat !== 'all') filteredData = filteredData.filter(r => r.asset_type === tcFilterCat);
+    filteredData = filteredData.filter(r => !(r.asset_type === 'INDEX' && r.expiry_date === '1900-01-01'));
+    if (!filteredData.length) return `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📇</div>No instruments match filter</div>`;
+    const grouped = {};
+    for (const r of filteredData) {
+        const key = r.expiry_date ? `${r.ticker}|${r.expiry_date}` : `${r.ticker}|eq`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(r);
+    }
+    return Object.values(grouped).map(rows => renderOneCard(rows[0])).join('');
+}
+
+const SIGNALS = ['Long Breakout', 'Sell Reversal', 'Neutral', 'Buy Reversal', 'Short Breakdown'];
+const REGIMES = ['High', 'Normal', 'Low'];
+
+function renderMatrix() {
+    const lkp = {};
+    for (const row of EMBEDDED_SUMMARY) {
+        const k = `${row.signal}|${row.vol_regime}`;
+        if (!lkp[k]) lkp[k] = { count: 0, tickers: [] };
+        lkp[k].count += (row.instrument_count || 0);
+        const ts = (row.tickers || '').split(',').filter(Boolean);
+        lkp[k].tickers.push(...ts);
+    }
+    const mp = document.getElementById('matrixPane');
+    mp.innerHTML = `<div class="sec-lbl">Signal × Volatility Regime</div>
+        <div class="mx-grid">
+            <div class="mx-hdr">Signal</div>
+            ${REGIMES.map(r => `<div class="mx-hdr" style="text-align:center">${r} Vol</div>`).join('')}
+            ${SIGNALS.map(sig => `<div class="mx-cell"><span class="sig ${sigC(sig)}" style="font-size:10px">${sig}</span></div>${REGIMES.map(reg => {
+                const cell = lkp[`${sig}|${reg}`] || { count: 0, tickers: [] };
+                const sigColor = {'Long Breakout': 'var(--green)', 'Short Breakdown': 'var(--red)', 'Buy Reversal': 'var(--blue)', 'Sell Reversal': 'var(--yellow)'}[sig] || 'var(--dim)';
+                return `<div class="mx-cell" style="text-align:center">${cell.tickers.length ? cell.tickers.map(t => `<span class="mx-chip" onclick="selTicker('${t}')" style="color:${sigColor}">${t}</span>`).join('') : '<span style="color:var(--dim);font-family:var(--mono);font-size:9px">—</span>'}</div>`;
+            }).join('')}`).join('')}
+        </div>
+        <div class="mx-guide"><div class="card-t">Interaction Guide</div>
+        <div class="mx-guide-grid">
+            <div><span style="color:var(--green)">Long Breakout + High</span> → Highest conviction bullish</div>
+            <div><span style="color:var(--red)">Short Breakdown + High</span> → Highest conviction bearish</div>
+            <div><span style="color:var(--blue)">Buy Reversal + Normal</span> → Classic 1:2 mean-reversion long</div>
+            <div><span style="color:var(--yellow)">Sell Reversal + Normal</span> → Classic 1:2 mean-reversion short</div>
+        </div></div>`;
+}
+
+function selTicker(t) {
+    const i = allData.findIndex(r => r.ticker === t);
+    if (i >= 0) selectRow(i);
+}
+
+function renderExpiry() {
+    const today = new Date().toISOString().slice(0, 10);
+    const valid = EMBEDDED_EXPIRY.filter(e => e.expiry_date && e.expiry_date !== '1900-01-01' && e.expiry_date >= today);
+    if (!valid.length) return;
+    const mp = document.getElementById('matrixPane');
+    mp.innerHTML = `<div class="exp-strip">${valid.map(e => {
+        const d = e.days_to_expiry || 0;
+        const c = d < 5 ? 'u' : (d < 15 ? 'n' : 'o');
+        return `<div class="exp-card"><div style="display:flex;justify-content:space-between"><span class="exp-tk">${e.ticker}</span><span class="exp-sr">${e.series_label || ''}</span></div><div class="exp-dt">${e.expiry_date || ''}</div><div class="exp-dte ${c}">${d}<span style="font-size:12px;font-weight:400"> d</span></div></div>`;
+    }).join('')}</div>` + mp.innerHTML;
+}
+
+function renderVol() {
+    if (!allData || !allData.length) {
+        document.getElementById('volPane').innerHTML = '<div class="empty">No data</div>';
+        return;
+    }
+    const high = allData.filter(r => r.vol_regime === 'High').length;
+    const norm = allData.filter(r => r.vol_regime === 'Normal').length;
+    const low = allData.filter(r => r.vol_regime === 'Low').length;
+    document.getElementById('volPane').innerHTML = `<div class="vol-metrics"><div class="vm-cell"><div class="vm-lbl">High Vol</div><div class="vm-val" style="color:var(--red)">${high}</div></div><div class="vm-cell"><div class="vm-lbl">Normal Vol</div><div class="vm-val" style="color:var(--acc)">${norm}</div></div><div class="vm-cell"><div class="vm-lbl">Low Vol</div><div class="vm-val" style="color:var(--mid)">${low}</div></div><div class="vm-cell"><div class="vm-lbl">Total</div><div class="vm-val">${allData.length}</div></div></div><div class="vol-grid" id="volGrid">${allData.slice(0, 20).map(r => `<div class="vol-card" onclick="selectRow(${allData.indexOf(r)})"><div class="vc-hdr"><div><div class="vc-tk">${r.ticker}</div></div><span class="vr vr-${(r.vol_regime || 'normal').toLowerCase()}">${r.vol_regime || 'Normal'}</span></div><div class="vs"><span class="vs-k">Signal</span><span class="sig ${sigC(r.signal)}" style="font-size:8px">${r.signal}</span></div><div class="vs"><span class="vs-k">ATR14</span><span class="vs-v">${fmt(r.atr14, 1)}</span></div><div class="vs"><span class="vs-k">RSI14</span><span class="vs-v">${fmt(r.rsi14, 1)}</span></div></div>`).join('')}</div>`;
+}
+
+// Initialize dashboard
+function init() {
+    // Create summary cards
+    const summaryHtml = `
+        <div class="sum-card" style="--sc:var(--mid)" onclick="setSigF('all',null)"><div class="sum-lbl">Instruments</div><div class="sum-val" id="sTotal">—</div><div class="sum-sub">Total</div></div>
+        <div class="sum-card" style="--sc:var(--green)" onclick="setSigF('Long Breakout',null)"><div class="sum-lbl">Long Breakout</div><div class="sum-val" id="sLB">—</div><div class="sum-sub">Above H4</div></div>
+        <div class="sum-card" style="--sc:var(--red)" onclick="setSigF('Short Breakdown',null)"><div class="sum-lbl">Short Breakdown</div><div class="sum-val" id="sSBD">—</div><div class="sum-sub">Below L4</div></div>
+        <div class="sum-card" style="--sc:var(--blue)" onclick="setSigF('Buy Reversal',null)"><div class="sum-lbl">Buy Reversal</div><div class="sum-val" id="sBR">—</div><div class="sum-sub">Near L3</div></div>
+        <div class="sum-card" style="--sc:var(--yellow)" onclick="setSigF('Sell Reversal',null)"><div class="sum-lbl">Sell Reversal</div><div class="sum-val" id="sSR">—</div><div class="sum-sub">Near H3</div></div>
+        <div class="sum-card" style="--sc:var(--red)" onclick="setSigF('high',null)"><div class="sum-lbl">High Vol</div><div class="sum-val" id="sHV">—</div><div class="sum-sub">Elevated</div></div>
+        <div class="sum-card" style="--sc:var(--dim)" onclick="setSigF('Neutral',null)"><div class="sum-lbl">Neutral</div><div class="sum-val" id="sN">—</div><div class="sum-sub">Wait zone</div></div>
+    `;
+    document.getElementById('summary').innerHTML = summaryHtml;
+    
+    updateSummary(allData);
+    applyFilters();
+    renderMatrix();
+    renderExpiry();
+    renderVol();
+    renderTradingCards(allData);
+}
+
+init();
 </script>
 </body>
 </html>
