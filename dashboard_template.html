@@ -368,11 +368,19 @@ td.g{color:var(--green);}td.r{color:var(--red);}td.b{color:var(--blue);}td.y{col
       <button class="tab-btn" onclick="swTab('tradingcard',this)" style="color:var(--teal)">📋 Trading Cards</button>
       <button class="tab-btn" onclick="swTab('stockpicker',this)" style="color:var(--purple)">🎯 Stock Picker</button>
     </div>
-    <div class="search-bar-wrap" id="searchBarWrap">
+    <!-- Table search bar -->
+    <div class="search-bar-wrap" id="searchBarTable">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInput" type="text" placeholder="Search ticker or name… e.g. INFY, HDFC, Tata" oninput="onSearch(this.value)" onkeydown="if(event.key==='Escape')clearSearch()">
-      <button class="search-clear" onclick="clearSearch()" id="searchClearBtn" style="display:none">✕ Clear</button>
-      <span class="search-count" id="searchCount"></span>
+      <input class="search-input" id="searchInputTable" type="text" placeholder="Search ticker or name… e.g. INFY, HDFC, Tata" oninput="onSearchTable(this.value)" onkeydown="if(event.key==='Escape')clearSearchTable()">
+      <button class="search-clear" onclick="clearSearchTable()" id="searchClearTable" style="display:none">✕ Clear</button>
+      <span class="search-count" id="searchCountTable"></span>
+    </div>
+    <!-- Trading Cards search bar -->
+    <div class="search-bar-wrap" id="searchBarCards" style="display:none">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInputCards" type="text" placeholder="Search cards… e.g. INFY, Buy Reversal, Futures" oninput="onSearchCards(this.value)" onkeydown="if(event.key==='Escape')clearSearchCards()">
+      <button class="search-clear" onclick="clearSearchCards()" id="searchClearCards" style="display:none">✕ Clear</button>
+      <span class="search-count" id="searchCountCards"></span>
     </div>
     <div class="tab-panel active" id="tab-table"><div class="tbl-hdr2"><div><div class="tbl-title">Camarilla Pivot Levels</div><div class="tbl-sub">Static snapshot from %%SOURCE_DATE%% OHLC → Trade: %%APPLIES_DATE%%</div></div></div><div class="tbl-wrap"><table><thead><tr><th id="th-ticker" onclick="sortBy('ticker')">Ticker</th><th id="th-asset_type" onclick="sortBy('asset_type')" style="text-align:left">Type</th><th id="th-signal" onclick="sortBy('signal')" style="text-align:left">Signal</th><th id="th-close_price" onclick="sortBy('close_price')">Close</th><th id="th-h4_long_breakout" onclick="sortBy('h4_long_breakout')">H4 Break</th><th id="th-h3_reversal_sell" onclick="sortBy('h3_reversal_sell')">H3 Sell</th><th id="th-l3_reversal_buy" onclick="sortBy('l3_reversal_buy')">L3 Buy</th><th id="th-l4_short_breakout" onclick="sortBy('l4_short_breakout')">L4 Break</th><th id="th-h4_sl" onclick="sortBy('h4_sl')">H4 SL</th><th id="th-l4_sl" onclick="sortBy('l4_sl')">L4 SL</th><th id="th-vol_regime" onclick="sortBy('vol_regime')">Vol</th><th id="th-rsi14" onclick="sortBy('rsi14')">RSI14</th><th id="th-atr14" onclick="sortBy('atr14')">ATR14</th><th id="th-garch_vol" onclick="sortBy('garch_vol')">GARCH%</th><th id="th-days_to_expiry" onclick="sortBy('days_to_expiry')">DTE</th><th id="th-expiry_date" onclick="sortBy('expiry_date')">Expiry</th></tr></thead><tbody id="tblBody"></tbody></table></div></div>
     <div class="tab-panel" id="tab-detail"><div id="detailPane"><div class="empty"><div class="empty-icon">◈</div>Click any instrument to see full detail</div></div></div>
@@ -400,12 +408,14 @@ let filtered = [];
 let sortKey = 'asset_type_rank', sortDir = 1;
 let activeSig = 'all', activeCat = 'all';
 let selectedIdx = null;
-let searchQuery = '';
+let searchQuery = '';       // table search
+let searchQueryCards = '';  // trading cards search
 
-function onSearch(val) {
+// ── Table search ──────────────────────────────────────────────
+function onSearchTable(val) {
     searchQuery = val.trim().toLowerCase();
-    const clearBtn = document.getElementById('searchClearBtn');
-    const countEl = document.getElementById('searchCount');
+    const clearBtn = document.getElementById('searchClearTable');
+    const countEl  = document.getElementById('searchCountTable');
     clearBtn.style.display = searchQuery ? 'inline-block' : 'none';
     applyFilters();
     if (searchQuery) {
@@ -417,9 +427,36 @@ function onSearch(val) {
     }
 }
 
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    onSearch('');
+function clearSearchTable() {
+    document.getElementById('searchInputTable').value = '';
+    onSearchTable('');
+}
+
+// ── Trading Cards search ──────────────────────────────────────
+function onSearchCards(val) {
+    searchQueryCards = val.trim().toLowerCase();
+    const clearBtn = document.getElementById('searchClearCards');
+    const countEl  = document.getElementById('searchCountCards');
+    clearBtn.style.display = searchQueryCards ? 'inline-block' : 'none';
+    // Re-render the card grid with the new query
+    const gridDiv = document.getElementById('tcGrid');
+    if (gridDiv) {
+        gridDiv.innerHTML = renderCardGrid(allData);
+        if (searchQueryCards) {
+            // Count actual card elements (exclude no-results div)
+            const cards = gridDiv.querySelectorAll('[onclick]');
+            countEl.textContent = `${cards.length} result${cards.length !== 1 ? 's' : ''}`;
+            countEl.className = 'search-count active';
+        } else {
+            countEl.textContent = '';
+            countEl.className = 'search-count';
+        }
+    }
+}
+
+function clearSearchCards() {
+    document.getElementById('searchInputCards').value = '';
+    onSearchCards('');
 }
 
 function tick() {
@@ -436,8 +473,11 @@ function swTab(id, btn) {
     if (btn) btn.classList.add('active');
     if (id === 'tradingcard' && allData.length) renderTradingCards(allData);
     if (id === 'stockpicker') renderStockPicker();
-    // Hide search bar on stockpicker tab (it has its own)
-    document.getElementById('searchBarWrap').style.display = id === 'stockpicker' ? 'none' : 'flex';
+    // Show the right search bar for each tab
+    const showTable = (id === 'table');
+    const showCards = (id === 'tradingcard');
+    document.getElementById('searchBarTable').style.display = showTable ? 'flex' : 'none';
+    document.getElementById('searchBarCards').style.display = showCards ? 'flex' : 'none';
 }
 
 function setCat(cat, btn) {
@@ -760,14 +800,37 @@ function setTcFilter(cat, btn) {
     if (cat === 'FUTURES') btn.classList.add('cf');
     if (cat === 'EQUITY') btn.classList.add('ce');
     const gridDiv = document.getElementById('tcGrid');
-    if (gridDiv) gridDiv.innerHTML = renderCardGrid(allData);
+    if (gridDiv) {
+        gridDiv.innerHTML = renderCardGrid(allData);
+        // Update count if searching
+        const countEl = document.getElementById('searchCountCards');
+        if (searchQueryCards && countEl) {
+            const matchCount = gridDiv.children.length;
+            countEl.textContent = `${matchCount} result${matchCount !== 1 ? 's' : ''}`;
+            countEl.className = 'search-count active';
+        }
+    }
 }
 
 function renderCardGrid(data) {
     let filteredData = [...data];
     if (tcFilterCat !== 'all') filteredData = filteredData.filter(r => r.asset_type === tcFilterCat);
     filteredData = filteredData.filter(r => !(r.asset_type === 'INDEX' && r.expiry_date === '1900-01-01'));
-    if (!filteredData.length) return `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📇</div>No instruments match filter</div>`;
+    // Apply card-specific search
+    if (searchQueryCards) {
+        filteredData = filteredData.filter(r =>
+            (r.ticker || '').toLowerCase().includes(searchQueryCards) ||
+            (r.instrument_name || '').toLowerCase().includes(searchQueryCards) ||
+            (r.signal || '').toLowerCase().includes(searchQueryCards) ||
+            (r.asset_type || '').toLowerCase().includes(searchQueryCards)
+        );
+    }
+    if (!filteredData.length) {
+        const msg = searchQueryCards
+            ? `<div class="search-no-results" style="grid-column:1/-1;padding:48px 24px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim)">🔍 No cards for "<strong style="color:var(--txt)">${searchQueryCards}</strong>" — try a different ticker or name</div>`
+            : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📇</div>No instruments match filter</div>`;
+        return msg;
+    }
     const grouped = {};
     for (const r of filteredData) {
         const key = r.expiry_date ? `${r.ticker}|${r.expiry_date}` : `${r.ticker}|eq`;
