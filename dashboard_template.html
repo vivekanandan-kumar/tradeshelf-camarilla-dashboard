@@ -367,6 +367,7 @@ td.g{color:var(--green);}td.r{color:var(--red);}td.b{color:var(--blue);}td.y{col
       <button class="tab-btn" onclick="swTab('vol',this)">Volatility Report</button>
       <button class="tab-btn" onclick="swTab('tradingcard',this)" style="color:var(--teal)">📋 Trading Cards</button>
       <button class="tab-btn" onclick="swTab('stockpicker',this)" style="color:var(--purple)">🎯 Stock Picker</button>
+      <button class="tab-btn" onclick="swTab('elliott',this)" style="color:var(--orange)">〽 Elliott Wave</button>
     </div>
     <!-- Table search bar -->
     <div class="search-bar-wrap" id="searchBarTable">
@@ -388,12 +389,15 @@ td.g{color:var(--green);}td.r{color:var(--red);}td.b{color:var(--blue);}td.y{col
     <div class="tab-panel" id="tab-vol"><div id="volPane"></div></div>
     <div class="tab-panel" id="tab-tradingcard"><div id="tradingCardPane"></div></div>
     <div class="tab-panel" id="tab-stockpicker"><div id="stockPickerPane"></div></div>
+    <div class="tab-panel" id="tab-elliott"><div id="elliottPane"><div class="empty"><div class="empty-icon">〽</div>Loading Elliott Wave signals…</div></div></div>
   </div>
 </div>
 
 <script>
 // ========== EMBEDDED DATA ==========
 const EMBEDDED_DATA = /*%%CAMARILLA_DATA%%*/[];
+// Elliott Wave signals injected by create_html_static.py
+const ELLIOTT_DATA = /*%%ELLIOTT_DATA%%*/[];
 const EMBEDDED_SUMMARY = [{"asset_type": "EQUITY", "signal": "Neutral", "vol_regime": "High", "interaction_pattern": "Neutral \u2014 Wait", "instrument_count": 2, "tickers": "ADANIENSOL.NS,ADANIGREEN.NS"}, {"asset_type": "EQUITY", "signal": "Neutral", "vol_regime": "Normal", "interaction_pattern": "Neutral \u2014 Wait", "instrument_count": 48, "tickers": "ABB.NS,ADANIENT.NS,ADANIPORTS.NS,APOLLOHOSP.NS,ASIANPAINT.NS,BAJAJ-AUTO.NS,BAJAJFINSV.NS,BAJAJHLDNG.NS,BHARTIARTL.NS,BOSCHLTD.NS,BRITANNIA.NS,CGPOWER.NS,CHOLAFIN.NS,CIPLA.NS,CUMMINSIND.NS,DIVISLAB.NS,DMART.NS,DRREDDY.NS,EICHERMOT.NS,ENRIN.NS,GODREJCP.NS,GRASIM.NS,HAL.NS,HCLTECH.NS,HDFCAMC.NS,HINDUNILVR.NS,HYUNDAI.NS,INDIGO.NS,INFY.NS,LTM.NS,LT.NS,MARUTI.NS,MAZDOCK.NS,M&M.NS,MUTHOOTFIN.NS,SBILIFE.NS,SHREECEM.NS,SHRIRAMFIN.NS,SIEMENS.NS,SOLARINDS.NS,SUNPHARMA.NS,TCS.NS,TECHM.NS,TITAN.NS,TORNTPHARM.NS,TRENT.NS,TVSMOTOR.NS,ULTRACEMCO.NS"}, {"asset_type": "EQUITY", "signal": "Sell Reversal", "vol_regime": "Normal", "interaction_pattern": "Buy Reversal Zone", "instrument_count": 50, "tickers": "ADANIPOWER.NS,AMBUJACEM.NS,AXISBANK.NS,BAJFINANCE.NS,BANKBARODA.NS,BEL.NS,BPCL.NS,CANBK.NS,COALINDIA.NS,DLF.NS,ETERNAL.NS,GAIL.NS,HDFCBANK.NS,HDFCLIFE.NS,HINDALCO.NS,HINDZINC.NS,ICICIBANK.NS,INDHOTEL.NS,IOC.NS,IRFC.NS,ITC.NS,JINDALSTEL.NS,JIOFIN.NS,JSWSTEEL.NS,KOTAKBANK.NS,LODHA.NS,MAXHEALTH.NS,MOTHERSON.NS,NESTLEIND.NS,NTPC.NS,ONGC.NS,PFC.NS,PIDILITIND.NS,PNB.NS,POWERGRID.NS,RECLTD.NS,RELIANCE.NS,SBIN.NS,TATACAP.NS,TATACONSUM.NS,TATAPOWER.NS,TATASTEEL.NS,TMCV.NS,TMPV.NS,UNIONBANK.NS,UNITDSPR.NS,VBL.NS,VEDL.NS,WIPRO.NS,ZYDUSLIFE.NS"}];
 const EMBEDDED_EXPIRY = [];
 const STATIC_DATE = '%%SOURCE_DATE%%';
@@ -473,6 +477,7 @@ function swTab(id, btn) {
     if (btn) btn.classList.add('active');
     if (id === 'tradingcard' && allData.length) renderTradingCards(allData);
     if (id === 'stockpicker') renderStockPicker();
+    if (id === 'elliott') renderElliott();
     // Show the right search bar for each tab
     const showTable = (id === 'table');
     const showCards = (id === 'tradingcard');
@@ -1107,6 +1112,468 @@ function renderStockPicker() {
 function spSetMode(mode, btn) {
     spFilterMode = mode;
     renderStockPicker();
+}
+
+// ============================================================
+// ELLIOTT WAVE TAB
+// ============================================================
+// CSS injected inline so the template stays self-contained
+(function injectElliottCSS() {
+    const style = document.createElement('style');
+    style.textContent = `
+    .ew-topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+    .ew-pill{font-family:var(--mono);font-size:8px;font-weight:600;padding:4px 11px;border-radius:30px;
+      border:1px solid var(--bdr2);background:transparent;color:var(--dim);cursor:pointer;letter-spacing:.08em;
+      text-transform:uppercase;transition:all .15s;}
+    .ew-pill:hover{border-color:var(--mid);color:var(--mid);}
+    .ew-pill.on{background:rgba(21,101,192,.1);border-color:var(--acc);color:var(--acc);}
+    .ew-pill.on.buy{background:rgba(27,138,76,.1);border-color:var(--green);color:var(--green);}
+    .ew-pill.on.sell{background:rgba(198,40,40,.1);border-color:var(--red);color:var(--red);}
+    .ew-pill.on.watch{background:rgba(180,93,0,.1);border-color:var(--yellow);color:var(--yellow);}
+    .ew-sep{width:1px;height:18px;background:var(--bdr);flex-shrink:0;}
+
+    .ew-summary{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--bdr);
+      border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;}
+    .ew-sc{background:var(--surf);padding:10px 12px;}
+    .ew-sc-lbl{font-family:var(--mono);font-size:7px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:3px;}
+    .ew-sc-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--txt);letter-spacing:-.03em;}
+
+    /* signal & wave chips */
+    .ew-act{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 7px;border-radius:30px;border:1px solid;letter-spacing:.06em;white-space:nowrap;}
+    .ew-act-BUY{color:#1b8a4c;border-color:rgba(27,138,76,.4);background:rgba(27,138,76,.08);}
+    .ew-act-SELL{color:#c62828;border-color:rgba(198,40,40,.4);background:rgba(198,40,40,.08);}
+    .ew-act-WATCH{color:#b45d00;border-color:rgba(180,93,0,.35);background:rgba(180,93,0,.07);}
+    .ew-wl{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid;}
+    .ew-wl-WA{color:#7b1fa2;border-color:rgba(123,31,162,.3);background:rgba(123,31,162,.07);}
+    .ew-wl-WB{color:#e65100;border-color:rgba(230,81,0,.3);background:rgba(230,81,0,.07);}
+    .ew-wl-WC{color:#0277bd;border-color:rgba(2,119,189,.3);background:rgba(2,119,189,.07);}
+    .ew-wl-W5{color:#1b5e20;border-color:rgba(27,94,32,.3);background:rgba(27,94,32,.07);}
+    .ew-wl-def{color:var(--mid);border-color:var(--bdr2);}
+    .ew-pri-HIGH{color:#c62828;font-weight:700;}
+    .ew-pri-MEDIUM{color:#b45d00;font-weight:600;}
+    .ew-pri-LOW{color:var(--dim);}
+    .ew-cam-H3{color:#b45d00;font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid rgba(180,93,0,.3);background:rgba(180,93,0,.06);}
+    .ew-cam-L3{color:#1b8a4c;font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid rgba(27,138,76,.3);background:rgba(27,138,76,.06);}
+
+    /* main table */
+    .ew-tbl-wrap{border:1px solid var(--bdr);border-radius:var(--r2);overflow-x:auto;margin-bottom:14px;}
+    .ew-tbl{width:100%;border-collapse:collapse;min-width:1140px;}
+    .ew-tbl thead th{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+      padding:9px 10px;text-align:right;border-bottom:1px solid var(--bdr);background:var(--bg3);
+      cursor:pointer;white-space:nowrap;user-select:none;transition:color .1s;}
+    .ew-tbl thead th:first-child,.ew-tbl thead th:nth-child(2),.ew-tbl thead th:nth-child(3),.ew-tbl thead th:nth-child(4){text-align:left;}
+    .ew-tbl thead th:hover{color:var(--acc);}
+    .ew-tbl thead th.ew-asc::after{content:' ↑';color:var(--acc);}
+    .ew-tbl thead th.ew-desc::after{content:' ↓';color:var(--acc);}
+    .ew-tbl tbody tr{cursor:pointer;transition:background .08s;border-bottom:1px solid rgba(208,217,234,.5);}
+    .ew-tbl tbody tr:hover{background:rgba(21,101,192,.02);}
+    .ew-tbl tbody tr.ew-sel{background:rgba(21,101,192,.05);}
+    .ew-tbl tbody tr.ew-row-buy{border-left:3px solid #1b8a4c;}
+    .ew-tbl tbody tr.ew-row-sell{border-left:3px solid #c62828;}
+    .ew-tbl tbody tr.ew-row-watch{border-left:3px solid #b45d00;}
+    .ew-tbl tbody td{padding:7px 10px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--txt);}
+    .ew-tbl tbody td:first-child{text-align:left;font-weight:700;font-size:12px;}
+    .ew-tbl tbody td:nth-child(2),.ew-tbl tbody td:nth-child(3),.ew-tbl tbody td:nth-child(4){text-align:left;}
+    .ew-tbl td.g{color:#1b8a4c;}.ew-tbl td.r{color:#c62828;}.ew-tbl td.y{color:#b45d00;}.ew-tbl td.d{color:var(--mid);}
+    .ew-tbl td.rr-hi{color:#1b8a4c;font-weight:700;}.ew-tbl td.rr-mid{color:#b45d00;}.ew-tbl td.rr-lo{color:var(--dim);}
+    .ew-rsi-bar{display:inline-block;width:32px;height:4px;border-radius:2px;margin-left:4px;vertical-align:middle;opacity:.65;}
+
+    /* detail pane */
+    .ew-det-wrap{padding:16px;}
+    .ew-det-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+    .ew-det-ticker{font-family:var(--mono);font-size:22px;font-weight:700;}
+    .ew-det-name{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;}
+    .ew-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+    .ew-price-block{text-align:right;}
+    .ew-price-big{font-family:var(--mono);font-size:30px;font-weight:700;}
+    .ew-price-lbl{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:2px;}
+    .ew-next-pill{font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:var(--r);
+      background:rgba(21,101,192,.05);border:1px solid rgba(21,101,192,.15);color:var(--acc);
+      display:inline-block;margin-top:6px;}
+    .ew-ladder{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;}
+    .ew-ladder-hdr{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;
+      padding:9px 14px;border-bottom:1px solid var(--bdr);background:var(--bg3);display:flex;justify-content:space-between;}
+    .ew-lrow{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(208,217,234,.4);gap:12px;}
+    .ew-lrow:last-child{border:none;}
+    .ew-lrow.ew-entry-row{background:rgba(21,101,192,.035);}
+    .ew-lrow-lbl{font-family:var(--mono);font-size:9px;color:var(--dim);width:120px;flex-shrink:0;}
+    .ew-lrow-bar-wrap{width:100px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+    .ew-lrow-bar{height:100%;border-radius:3px;}
+    .ew-lrow-price{font-family:var(--mono);font-size:14px;font-weight:700;flex:1;text-align:right;}
+    .ew-lrow-dist{font-family:var(--mono);font-size:9px;width:60px;text-align:right;}
+    .ew-fib-strip{display:flex;gap:1px;margin-bottom:14px;border-radius:var(--r2);border:1px solid var(--bdr);overflow:hidden;}
+    .ew-fib-seg{flex:1;padding:8px 6px;text-align:center;background:var(--surf);}
+    .ew-fib-lbl{font-family:var(--mono);font-size:7px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:3px;}
+    .ew-fib-val{font-family:var(--mono);font-size:11px;font-weight:700;}
+    .ew-cards3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+    .ew-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;}
+    .ew-card-t{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:10px;opacity:.8;}
+    .ew-kv{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(208,217,234,.5);}
+    .ew-kv:last-child{border:none;}
+    .ew-kk{color:var(--dim);font-family:var(--mono);font-size:10px;}
+    .ew-kv_{font-family:var(--mono);font-size:12px;font-weight:600;}
+    .ew-rsi-outer{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px;}
+    .ew-violation{font-family:var(--mono);font-size:8px;padding:3px 8px;border-radius:30px;
+      background:rgba(183,28,28,.08);border:1px solid rgba(183,28,28,.25);color:#c62828;margin:2px;display:inline-block;}
+    .ew-pivot-chip{display:inline-block;font-family:var(--mono);font-size:9px;padding:2px 7px;
+      border-radius:4px;border:1px solid var(--bdr2);background:var(--surf2);margin:2px 2px 0 0;}
+    `;
+    document.head.appendChild(style);
+})();
+
+// ── Elliott Wave state ────────────────────────────────────────────────────────
+let ewData = typeof ELLIOTT_DATA !== 'undefined' ? ELLIOTT_DATA : [];
+let ewFiltered = ewData.slice();
+let ewActionFilter = 'all';
+let ewPriFilter = 'all';
+let ewWaveFilter = 'all';
+let ewSortKey = 'alert_priority';
+let ewSortDir = 1;
+let ewSelectedIdx = -1;
+
+const ewFmt = (v, d=2) => (v == null || isNaN(v)) ? '—' : Number(v).toLocaleString('en-IN', {minimumFractionDigits:d, maximumFractionDigits:d});
+const ewWlClass = w => ({'WA':'ew-wl-WA','WB':'ew-wl-WB','WC':'ew-wl-WC','W5':'ew-wl-W5'}[w]||'ew-wl-def');
+const ewActClass = a => 'ew-act ew-act-'+(a||'WATCH');
+const ewRowClass = a => ({'BUY':'ew-row-buy','SELL':'ew-row-sell','WATCH':'ew-row-watch'}[a]||'');
+const ewCamShort = c => c&&c.includes('H3') ? 'H3 Sell' : c&&c.includes('L3') ? 'L3 Buy' : null;
+const ewCamClass = c => c&&c.includes('H3') ? 'ew-cam-H3' : c&&c.includes('L3') ? 'ew-cam-L3' : '';
+const ewPriOrd = {'HIGH':0,'MEDIUM':1,'LOW':2,'WATCH':3};
+
+function ewApplyFilters() {
+    ewFiltered = ewData.filter(r => {
+        if (ewActionFilter !== 'all' && r.action !== ewActionFilter) return false;
+        if (ewPriFilter !== 'all' && r.alert_priority !== ewPriFilter) return false;
+        if (ewWaveFilter !== 'all' && r.wave_label !== ewWaveFilter) return false;
+        return true;
+    });
+    ewSortArr();
+    ewRenderSummary();
+    ewRenderTable();
+}
+
+function ewSortArr() {
+    ewFiltered.sort((a, b) => {
+        let av = a[ewSortKey], bv = b[ewSortKey];
+        if (ewSortKey === 'alert_priority') { av = ewPriOrd[av]??9; bv = ewPriOrd[bv]??9; }
+        if (av == null) return 1; if (bv == null) return -1;
+        return (typeof av === 'string' ? av.localeCompare(bv) : (av - bv)) * ewSortDir;
+    });
+}
+
+function ewSortBy(k) {
+    if (ewSortKey === k) ewSortDir *= -1; else { ewSortKey = k; ewSortDir = 1; }
+    document.querySelectorAll('.ew-tbl thead th').forEach(t => t.classList.remove('ew-asc','ew-desc'));
+    const th = document.getElementById('ewth-'+k);
+    if (th) th.classList.add(ewSortDir === 1 ? 'ew-asc' : 'ew-desc');
+    ewSortArr(); ewRenderTable();
+}
+
+function ewSetAction(f, btn) {
+    ewActionFilter = f;
+    document.querySelectorAll('.ew-topbar .ew-pill').forEach(b => b.classList.remove('on','buy','sell','watch'));
+    if (btn) { btn.classList.add('on'); if(f==='BUY')btn.classList.add('buy'); if(f==='SELL')btn.classList.add('sell'); if(f==='WATCH')btn.classList.add('watch'); }
+    ewApplyFilters();
+}
+function ewSetPri(f, btn) {
+    ewPriFilter = f;
+    document.querySelectorAll('.ew-pri-pill').forEach(b => b.classList.remove('on'));
+    if (btn) btn.classList.add('on');
+    ewApplyFilters();
+}
+function ewSetWave(f, btn) {
+    ewWaveFilter = f;
+    document.querySelectorAll('.ew-wave-pill').forEach(b => b.classList.remove('on'));
+    if (btn) btn.classList.add('on');
+    ewApplyFilters();
+}
+
+function ewRenderSummary() {
+    const d = ewFiltered;
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('ew-s-total', d.length);
+    set('ew-s-buy',   d.filter(r=>r.action==='BUY').length);
+    set('ew-s-sell',  d.filter(r=>r.action==='SELL').length);
+    set('ew-s-high',  d.filter(r=>r.alert_priority==='HIGH').length);
+    set('ew-s-cam',   d.filter(r=>r.camarilla_confluence && r.camarilla_confluence!=='No Pivot Confluence').length);
+    const rsiSet = d.filter(r=>r.rsi14!=null);
+    set('ew-s-rsi', rsiSet.length ? Math.round(rsiSet.reduce((a,r)=>a+r.rsi14,0)/rsiSet.length) : '—');
+}
+
+function ewRenderTable() {
+    const body = document.getElementById('ewTblBody');
+    if (!body) return;
+    if (!ewFiltered.length) {
+        body.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:28px;font-family:var(--mono);color:var(--dim)">No Elliott Wave signals match the current filter</td></tr>';
+        return;
+    }
+    body.innerHTML = ewFiltered.map(r => {
+        const gi = ewData.indexOf(r);
+        const isBuy = r.action === 'BUY';
+        const tc = isBuy ? 'g' : r.action==='SELL' ? 'r' : 'd';
+        const rsiCol = r.rsi14 > 70 ? '#c62828' : r.rsi14 < 30 ? '#1b8a4c' : '#1565c0';
+        const rrCls = r.rr_ratio >= 3 ? 'rr-hi' : r.rr_ratio >= 2 ? 'rr-mid' : 'rr-lo';
+        const confCls = r.confidence_score >= 90 ? 'g' : r.confidence_score >= 75 ? 'y' : 'd';
+        const camHtml = ewCamShort(r.camarilla_confluence)
+            ? `<span class="${ewCamClass(r.camarilla_confluence)}">${ewCamShort(r.camarilla_confluence)}</span>`
+            : '<span style="color:var(--bdr2)">—</span>';
+        const priDot = r.alert_priority==='HIGH' ? '🔴' : r.alert_priority==='MEDIUM' ? '🟡' : '⚪';
+        const violation = r.rule_violations && r.rule_violations.length ? ' ⚠' : '';
+        return `<tr onclick="ewSelectRow(${gi})" id="ew-tr-${gi}" class="${ewRowClass(r.action)}${gi===ewSelectedIdx?' ew-sel':''}">
+          <td>${(r.ticker||'').replace('.NS','')}</td>
+          <td><span class="${ewActClass(r.action)}">${r.action||'—'}</span></td>
+          <td><span class="ew-wl ${ewWlClass(r.wave_label)}">${r.wave_label||'—'}</span> <span style="font-family:var(--mono);font-size:8px;color:var(--dim)">${(r.wave_direction||'').substring(0,4)}</span></td>
+          <td style="font-size:9px;color:var(--mid);max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.next_expected_wave||''}">${r.next_expected_wave||'—'}</td>
+          <td><span class="ew-pri-${r.alert_priority}" style="font-family:var(--mono);font-size:9px">${priDot} ${r.alert_priority||'—'}</span>${violation}</td>
+          <td class="${tc}">${ewFmt(r.entry_price)}</td>
+          <td class="r">${ewFmt(r.stop_loss)}</td>
+          <td class="${tc}">${ewFmt(r.target1)}</td>
+          <td class="${tc}">${ewFmt(r.target2)}</td>
+          <td class="${tc}">${ewFmt(r.target3)}</td>
+          <td class="${rrCls}">${ewFmt(r.rr_ratio,2)}×</td>
+          <td style="white-space:nowrap">
+            <span style="color:${rsiCol}">${ewFmt(r.rsi14,1)}</span>
+            <span class="ew-rsi-bar" style="background:${rsiCol};width:${Math.max(4,Math.min(32,r.rsi14/100*32))}px"></span>
+          </td>
+          <td class="${confCls}">${ewFmt(r.confidence_score,0)}%</td>
+          <td><span class="vr vr-${(r.vol_regime||'Normal').toLowerCase()}">${r.vol_regime||'—'}</span></td>
+          <td>${camHtml}</td>
+        </tr>`;
+    }).join('');
+}
+
+function ewSelectRow(gi) {
+    ewSelectedIdx = gi;
+    document.querySelectorAll('.ew-tbl tbody tr').forEach(t =>
+        t.classList.toggle('ew-sel', t.id === 'ew-tr-'+gi));
+    ewRenderDetail(ewData[gi]);
+    document.getElementById('ewDetailWrap').style.display = 'block';
+    document.getElementById('ewTableWrap').style.display = 'none';
+    document.getElementById('ewBackBtn').style.display = 'inline-flex';
+}
+
+function ewRenderDetail(r) {
+    if (!r) return;
+    const isBuy = r.action === 'BUY';
+    const priceColor = isBuy ? '#1b8a4c' : '#c62828';
+    const slDist = Math.abs((r.entry_price||0) - (r.stop_loss||0));
+    const rsiColor = r.rsi14 > 70 ? '#c62828' : r.rsi14 < 30 ? '#1b8a4c' : '#1565c0';
+    const violations = r.rule_violations || [];
+    const waveJson = r.wave_count_json || [];
+
+    // Build price ladder rows
+    const mkRow = (lbl, price, color, pctW, dist, isEntry) => `
+      <div class="ew-lrow${isEntry?' ew-entry-row':''}">
+        <span class="ew-lrow-lbl">${lbl}</span>
+        <span class="ew-lrow-bar-wrap"><span class="ew-lrow-bar" style="width:${pctW}%;background:${color};opacity:.7"></span></span>
+        <span class="ew-lrow-price" style="color:${color}">${ewFmt(price)}</span>
+        <span class="ew-lrow-dist" style="color:${color}">${dist}</span>
+      </div>`;
+
+    const ladderRows = isBuy ? [
+        mkRow('T3 · 161.8%', r.target3, '#1b8a4c', 88, '+'+ewFmt(Math.abs(r.target3-r.entry_price))),
+        mkRow('T2 · 100%', r.target2, '#1b8a4c', 72, '+'+ewFmt(Math.abs(r.target2-r.entry_price))),
+        mkRow('T1 · 61.8%', r.target1, '#00695c', 55, '+'+ewFmt(Math.abs(r.target1-r.entry_price))),
+        mkRow('▶ ENTRY', r.entry_price, '#1565c0', 40, 'Current', true),
+        mkRow('Stop Loss', r.stop_loss, '#c62828', 22, '−'+ewFmt(slDist))
+    ] : [
+        mkRow('Stop Loss', r.stop_loss, '#c62828', 82, '+'+ewFmt(slDist)),
+        mkRow('▶ ENTRY', r.entry_price, '#1565c0', 65, 'Current', true),
+        mkRow('T1 · 61.8%', r.target1, '#00695c', 50, '−'+ewFmt(Math.abs(r.entry_price-r.target1))),
+        mkRow('T2 · 100%', r.target2, '#1b8a4c', 34, '−'+ewFmt(Math.abs(r.entry_price-r.target2))),
+        mkRow('T3 · 161.8%', r.target3, '#1b8a4c', 18, '−'+ewFmt(Math.abs(r.entry_price-r.target3)))
+    ];
+
+    // Pivot chips from wave_count_json
+    const pivotChips = waveJson.length
+        ? waveJson.map(p => `<span class="ew-pivot-chip" title="${p.date}">${p.label}: <strong>${ewFmt(p.price)}</strong></span>`).join('')
+        : '<span style="color:var(--dim);font-family:var(--mono);font-size:9px">No pivot data</span>';
+
+    const camHtml = ewCamShort(r.camarilla_confluence)
+        ? `<span class="${ewCamClass(r.camarilla_confluence)}">${r.camarilla_confluence}</span>`
+        : '<span style="color:var(--dim);font-family:var(--mono);font-size:9px">No Camarilla Confluence</span>';
+
+    document.getElementById('ewDetailBody').innerHTML = `
+      <div class="ew-det-header">
+        <div>
+          <div class="ew-det-ticker">${(r.ticker||'').replace('.NS','')}</div>
+          <div class="ew-det-name">${r.name||r.ticker||''}</div>
+          <div class="ew-badge-row">
+            <span class="${ewActClass(r.action)}">${r.action||'—'}</span>
+            <span class="ew-wl ${ewWlClass(r.wave_label)}">${r.wave_label} · ${r.wave_structure||''}</span>
+            <span class="vr vr-${(r.vol_regime||'Normal').toLowerCase()}">${r.vol_regime||'Normal'} Vol</span>
+            ${ewCamShort(r.camarilla_confluence) ? camHtml : ''}
+            <span style="font-family:var(--mono);font-size:8px;padding:3px 8px;border-radius:30px;border:1px solid;color:${r.alert_priority==='HIGH'?'#c62828':r.alert_priority==='MEDIUM'?'#b45d00':'var(--dim)'}">
+              ${r.alert_priority==='HIGH'?'🔴':r.alert_priority==='MEDIUM'?'🟡':'⚪'} ${r.alert_priority} PRIORITY
+            </span>
+          </div>
+          ${violations.length ? '<div style="margin-top:8px">'+violations.map(v=>`<span class="ew-violation">⚠ ${v}</span>`).join('')+'</div>' : ''}
+        </div>
+        <div class="ew-price-block">
+          <div class="ew-price-big" style="color:${priceColor}">${ewFmt(r.entry_price)}</div>
+          <div class="ew-price-lbl">ENTRY · R:R ${ewFmt(r.rr_ratio,2)}×</div>
+          <div class="ew-next-pill">${r.next_expected_wave||''}</div>
+        </div>
+      </div>
+
+      <div class="ew-ladder">
+        <div class="ew-ladder-hdr">
+          <span>📐 Price Ladder &amp; Targets</span>
+          <span style="color:var(--dim);font-size:9px">Candle window: ${r.candle_window||'—'} · Signal date: ${r.signal_date||'—'}</span>
+        </div>
+        ${ladderRows.join('')}
+      </div>
+
+      <div class="ew-fib-strip">
+        <div class="ew-fib-seg" style="background:rgba(106,27,154,.04)">
+          <div class="ew-fib-lbl">Support 38.2%</div>
+          <div class="ew-fib-val" style="color:#7b1fa2">${ewFmt(r.fib_support_38_2)}</div>
+        </div>
+        <div class="ew-fib-seg" style="background:rgba(2,119,189,.04)">
+          <div class="ew-fib-lbl">Support 61.8%</div>
+          <div class="ew-fib-val" style="color:#0277bd">${ewFmt(r.fib_support_61_8)}</div>
+        </div>
+        <div class="ew-fib-seg" style="background:rgba(27,138,76,.04)">
+          <div class="ew-fib-lbl">Target 61.8%</div>
+          <div class="ew-fib-val" style="color:#1b8a4c">${ewFmt(r.fib_target_61_8)}</div>
+        </div>
+        <div class="ew-fib-seg" style="background:rgba(21,101,192,.04)">
+          <div class="ew-fib-lbl">Target 100%</div>
+          <div class="ew-fib-val" style="color:#1565c0">${ewFmt(r.fib_target_100)}</div>
+        </div>
+        <div class="ew-fib-seg" style="background:rgba(230,81,0,.04)">
+          <div class="ew-fib-lbl">Target 161.8%</div>
+          <div class="ew-fib-val" style="color:#e65100">${ewFmt(r.fib_target_161_8)}</div>
+        </div>
+      </div>
+
+      <div class="ew-cards3">
+        <div class="ew-card">
+          <div class="ew-card-t">Wave Analysis</div>
+          <div class="ew-kv"><span class="ew-kk">Wave Label</span><span class="ew-kv_"><span class="ew-wl ${ewWlClass(r.wave_label)}">${r.wave_label}</span></span></div>
+          <div class="ew-kv"><span class="ew-kk">Structure</span><span class="ew-kv_" style="color:var(--mid)">${r.wave_structure||'—'}</span></div>
+          <div class="ew-kv"><span class="ew-kk">Direction</span><span class="ew-kv_" style="color:${priceColor}">${r.wave_direction||'—'}</span></div>
+          <div class="ew-kv"><span class="ew-kk">Confidence</span><span class="ew-kv_" style="color:${r.confidence_score>=90?'#1b8a4c':r.confidence_score>=75?'#b45d00':'var(--dim)'}">${ewFmt(r.confidence_score,0)}%</span></div>
+          <div class="ew-kv"><span class="ew-kk">Candle Window</span><span class="ew-kv_">${r.candle_window||'—'}</span></div>
+          <div class="ew-kv"><span class="ew-kk">Signal Date</span><span class="ew-kv_" style="color:var(--mid)">${r.signal_date||'—'}</span></div>
+        </div>
+        <div class="ew-card">
+          <div class="ew-card-t">Technicals</div>
+          <div class="ew-kv"><span class="ew-kk">RSI(14)</span><span class="ew-kv_" style="color:${rsiColor}">${ewFmt(r.rsi14,1)}</span></div>
+          <div class="ew-rsi-outer" style="margin:-2px 0 6px"><div style="height:5px;background:${rsiColor};width:${r.rsi14||0}%;border-radius:3px;opacity:.7"></div></div>
+          <div class="ew-kv"><span class="ew-kk">ATR(14)</span><span class="ew-kv_">${ewFmt(r.atr14,2)}</span></div>
+          <div class="ew-kv"><span class="ew-kk">GARCH Vol</span><span class="ew-kv_" style="color:${(r.garch_vol||0)>0.5?'#c62828':(r.garch_vol||0)<0.2?'var(--dim)':'#b45d00'}">${r.garch_vol!=null?((r.garch_vol)*100).toFixed(1)+'%':'—'}</span></div>
+          <div class="ew-kv"><span class="ew-kk">Vol Regime</span><span class="ew-kv_"><span class="vr vr-${(r.vol_regime||'Normal').toLowerCase()}">${r.vol_regime||'—'}</span></span></div>
+          <div class="ew-kv"><span class="ew-kk">H4 Long Break</span><span class="ew-kv_ g">${ewFmt(r.h4_long_breakout)}</span></div>
+          <div class="ew-kv"><span class="ew-kk">L4 Short Break</span><span class="ew-kv_ r">${ewFmt(r.l4_short_breakout)}</span></div>
+        </div>
+        <div class="ew-card">
+          <div class="ew-card-t">Wave Pivots</div>
+          <div class="ew-kv"><span class="ew-kk">Wave Start</span><span class="ew-kv_">${ewFmt(r.wave_start_price)} <span style="color:var(--dim);font-size:9px">${r.wave_start_date||''}</span></span></div>
+          <div class="ew-kv"><span class="ew-kk">Wave End</span><span class="ew-kv_">${ewFmt(r.wave_end_price)} <span style="color:var(--dim);font-size:9px">${r.wave_end_date||''}</span></span></div>
+          <div class="ew-kv"><span class="ew-kk">Wave Range</span><span class="ew-kv_">${ewFmt(Math.abs((r.wave_end_price||0)-(r.wave_start_price||0)))}</span></div>
+          <div class="ew-kv"><span class="ew-kk">Camarilla</span><span class="ew-kv_">${camHtml}</span></div>
+          <div class="ew-kv" style="flex-direction:column;align-items:flex-start;gap:4px">
+            <span class="ew-kk">Pivot Count</span>
+            <div style="margin-top:2px">${pivotChips}</div>
+          </div>
+        </div>
+      </div>
+    `;
+}
+
+let ewRendered = false;
+function renderElliott() {
+    const pane = document.getElementById('elliottPane');
+    if (!pane) return;
+
+    if (!ewData || !ewData.length) {
+        pane.innerHTML = '<div class="empty"><div class="empty-icon">〽</div><div style="font-family:var(--mono)">No Elliott Wave data available.<br>Ensure the API endpoint is reachable and the <code>%%ELLIOTT_DATA%%</code> token is populated.</div></div>';
+        return;
+    }
+
+    if (!ewRendered) {
+        ewFiltered = ewData.slice();
+        ewSortArr();
+        ewRendered = true;
+    }
+
+    pane.innerHTML = `
+    <div class="ew-topbar">
+      <span style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--dim);text-transform:uppercase">Action</span>
+      <button class="ew-pill on" onclick="ewSetAction('all',this)">All</button>
+      <button class="ew-pill" onclick="ewSetAction('BUY',this)">▲ Buy</button>
+      <button class="ew-pill" onclick="ewSetAction('SELL',this)">▼ Sell</button>
+      <button class="ew-pill" onclick="ewSetAction('WATCH',this)">◎ Watch</button>
+      <div class="ew-sep"></div>
+      <span style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--dim);text-transform:uppercase">Priority</span>
+      <button class="ew-pill ew-pri-pill on" onclick="ewSetPri('all',this)">All</button>
+      <button class="ew-pill ew-pri-pill" onclick="ewSetPri('HIGH',this)">🔴 High</button>
+      <button class="ew-pill ew-pri-pill" onclick="ewSetPri('MEDIUM',this)">🟡 Medium</button>
+      <div class="ew-sep"></div>
+      <span style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--dim);text-transform:uppercase">Wave</span>
+      <button class="ew-pill ew-wave-pill on" onclick="ewSetWave('all',this)">All</button>
+      <button class="ew-pill ew-wave-pill" onclick="ewSetWave('WA',this)">WA</button>
+      <button class="ew-pill ew-wave-pill" onclick="ewSetWave('WB',this)">WB</button>
+      <button class="ew-pill ew-wave-pill" onclick="ewSetWave('WC',this)">WC</button>
+      <button class="ew-pill ew-wave-pill" onclick="ewSetWave('W5',this)">W5</button>
+    </div>
+
+    <div class="ew-summary">
+      <div class="ew-sc"><div class="ew-sc-lbl">Total Signals</div><div class="ew-sc-val" id="ew-s-total">—</div></div>
+      <div class="ew-sc"><div class="ew-sc-lbl">Buy</div><div class="ew-sc-val" style="color:#1b8a4c" id="ew-s-buy">—</div></div>
+      <div class="ew-sc"><div class="ew-sc-lbl">Sell</div><div class="ew-sc-val" style="color:#c62828" id="ew-s-sell">—</div></div>
+      <div class="ew-sc"><div class="ew-sc-lbl">High Priority</div><div class="ew-sc-val" style="color:#c62828" id="ew-s-high">—</div></div>
+      <div class="ew-sc"><div class="ew-sc-lbl">Cam Confluence</div><div class="ew-sc-val" style="color:var(--teal)" id="ew-s-cam">—</div></div>
+      <div class="ew-sc"><div class="ew-sc-lbl">Avg RSI</div><div class="ew-sc-val" id="ew-s-rsi">—</div></div>
+    </div>
+
+    <div id="ewTableWrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--acc)">Elliott Wave Signals · NSE</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px">Click any row for full detail · Sorted by priority then R:R</div>
+        </div>
+      </div>
+      <div class="ew-tbl-wrap">
+        <table class="ew-tbl">
+          <thead><tr>
+            <th id="ewth-ticker" onclick="ewSortBy('ticker')">Ticker</th>
+            <th id="ewth-action" onclick="ewSortBy('action')">Action</th>
+            <th id="ewth-wave_label" onclick="ewSortBy('wave_label')">Wave</th>
+            <th id="ewth-next_expected_wave" onclick="ewSortBy('next_expected_wave')">Next Expected</th>
+            <th id="ewth-alert_priority" onclick="ewSortBy('alert_priority')">Priority</th>
+            <th id="ewth-entry_price" onclick="ewSortBy('entry_price')">Entry</th>
+            <th id="ewth-stop_loss" onclick="ewSortBy('stop_loss')">SL</th>
+            <th id="ewth-target1" onclick="ewSortBy('target1')">T1</th>
+            <th id="ewth-target2" onclick="ewSortBy('target2')">T2</th>
+            <th id="ewth-target3" onclick="ewSortBy('target3')">T3</th>
+            <th id="ewth-rr_ratio" onclick="ewSortBy('rr_ratio')">R:R</th>
+            <th id="ewth-rsi14" onclick="ewSortBy('rsi14')">RSI14</th>
+            <th id="ewth-confidence_score" onclick="ewSortBy('confidence_score')">Conf%</th>
+            <th id="ewth-vol_regime" onclick="ewSortBy('vol_regime')">Vol</th>
+            <th id="ewth-camarilla_confluence" onclick="ewSortBy('camarilla_confluence')">Cam</th>
+          </tr></thead>
+          <tbody id="ewTblBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ewDetailWrap" style="display:none">
+      <div style="margin-bottom:12px">
+        <button id="ewBackBtn" onclick="ewGoBack()" style="font-family:var(--mono);font-size:9px;padding:5px 14px;border-radius:var(--r2);border:1px solid var(--bdr2);background:transparent;color:var(--mid);cursor:pointer;letter-spacing:.08em">← Back to Table</button>
+      </div>
+      <div id="ewDetailBody"></div>
+    </div>
+    `;
+
+    ewRenderSummary();
+    ewRenderTable();
+}
+
+function ewGoBack() {
+    document.getElementById('ewDetailWrap').style.display = 'none';
+    document.getElementById('ewTableWrap').style.display = 'block';
+    document.getElementById('ewBackBtn').style.display = 'none';
 }
 
 // Initialize dashboard
