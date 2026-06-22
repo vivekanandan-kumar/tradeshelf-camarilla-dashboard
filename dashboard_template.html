@@ -130,6 +130,11 @@ body > * { position: relative; z-index: 1; }
 .main { display: flex; flex-direction: column; overflow: hidden; background: var(--surf); }
 .tabs { display: flex; background: var(--surf2); border-bottom: 1px solid var(--bdr); flex-shrink: 0; padding: 0 12px; overflow-x: auto; gap: 4px; }
 .tabs::-webkit-scrollbar { height: 0px; }
+.tab-group { display: flex; align-items: center; gap: 2px; }
+.tab-group + .tab-group { margin-left: 6px; padding-left: 6px; border-left: 1px solid var(--bdr); }
+.universe-badge { font-family: var(--sans); font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.03em; margin-left: 6px; display: inline-block; vertical-align: middle; }
+.universe-badge.n50 { background: rgba(126, 34, 206, 0.1); color: var(--purple); }
+.universe-badge.n400 { background: rgba(15, 118, 110, 0.1); color: var(--teal); }
 .tab-btn { font-family: var(--sans); font-size: 12px; font-weight: 600; padding: 0 16px; height: 44px; border: none;
   background: transparent; color: var(--dim); cursor: pointer; display: flex; align-items: center; gap: 6px;
   border-bottom: 3px solid transparent; transition: all 0.2s ease; white-space:nowrap; }
@@ -442,14 +447,20 @@ td.d { color: var(--dim); }
   
   <div class="main">
     <div class="tabs">
-      <button class="tab-btn active" onclick="swTab('elliott-index',this)" style="color:var(--orange)">〽 Elliott Wave - Index</button>
-      <button class="tab-btn" onclick="swTab('elliott',this)" style="color:var(--orange)">〽 Elliott-Wave Stocks</button>
-      <button class="tab-btn" onclick="swTab('table',this)">Levels Table</button>
-      <button class="tab-btn" onclick="swTab('detail',this)">Instrument Detail</button>
-      <button class="tab-btn" onclick="swTab('matrix',this)">Signal Matrix</button>
-      <button class="tab-btn" onclick="swTab('vol',this)">Volatility Report</button>
-      <button class="tab-btn" onclick="swTab('tradingcard',this)" style="color:var(--teal)">📋 Trading Cards</button>
-      <button class="tab-btn" onclick="swTab('stockpicker',this)" style="color:var(--purple)">🎯 Stock Picker</button>
+      <div class="tab-group">
+        <button class="tab-btn active" onclick="swTab('elliott-index',this)" style="color:var(--orange)">〽 Elliott Wave - Index</button>
+        <button class="tab-btn" onclick="swTab('elliott',this)" style="color:var(--orange)">〽 Elliott Wave - Stocks</button>
+      </div>
+      <div class="tab-group">
+        <button class="tab-btn" onclick="swTab('table',this)">Levels Table</button>
+        <button class="tab-btn" onclick="swTab('detail',this)">Instrument Detail</button>
+        <button class="tab-btn" onclick="swTab('matrix',this)">Signal Matrix</button>
+        <button class="tab-btn" onclick="swTab('vol',this)">Volatility Report</button>
+        <button class="tab-btn" onclick="swTab('tradingcard',this)" style="color:var(--teal)">📋 Trading Cards</button>
+      </div>
+      <div class="tab-group">
+        <button class="tab-btn" onclick="swTab('stockpicker',this)" style="color:var(--purple)">🎯 Stock Picker</button>
+      </div>
     </div>
 
     <!-- Table search bar -->
@@ -471,7 +482,7 @@ td.d { color: var(--dim); }
     <!-- Elliott Wave Stocks search bar -->
     <div class="search-bar-wrap" id="searchBarElliottStocks" style="display:none">
       <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInputElliottStocks" type="text" placeholder="Filter Elliott-Wave stocks by ticker, pattern, or priority... (e.g., RELIANCE, Impulse, HIGH)" oninput="onSearchElliottStocks(this.value)" onkeydown="if(event.key==='Escape')clearSearchElliottStocks()">
+      <input class="search-input" id="searchInputElliottStocks" type="text" placeholder="Filter by ticker, wave structure, sector, or priority... (e.g., RELIANCE, IMPULSE, IT, HIGH)" oninput="onSearchElliottStocks(this.value)" onkeydown="if(event.key==='Escape')clearSearchElliottStocks()">
       <button class="search-clear" onclick="clearSearchElliottStocks()" id="searchClearElliottStocks" style="display:none">✕ Clear</button>
       <span class="search-count" id="searchCountElliottStocks"></span>
     </div>
@@ -481,7 +492,7 @@ td.d { color: var(--dim); }
       <div class="panel-hd">
         <div>
           <div class="panel-title">Structural Trend Analytics: Major Market Indices</div>
-          <div class="panel-sub">High-conviction wave patterns, sub-wave counts, and structural invalidation targets for primary indices[cite: 1]</div>
+          <div class="panel-sub">High-conviction wave patterns, sub-wave counts, and structural invalidation targets for primary indices</div>
         </div>
       </div>
       <div id="elliottIndexPane"></div>
@@ -492,7 +503,7 @@ td.d { color: var(--dim); }
       <div class="panel-hd">
         <div>
           <div class="panel-title">Camarilla Equation Pivot Levels Matrix</div>
-          <div class="panel-sub">Calculated bounds based on %%SOURCE_DATE%% absolute price data mappings[cite: 1]</div>
+          <div class="panel-sub">Calculated bounds based on %%SOURCE_DATE%% absolute price data mappings</div>
         </div>
       </div>
       <div class="tbl-wrap">
@@ -539,7 +550,7 @@ td.d { color: var(--dim); }
       <div class="panel-hd">
         <div>
           <div class="panel-title">Structural Trend Analytics: Individual Equity Constituents</div>
-          <div class="panel-sub">Wave counting, Fibonacci extensions, and structural setups for specific stock listings[cite: 1]</div>
+          <div class="panel-sub">NIFTY 100 is always tracked in full, plus the next 400 best-ranked setups for the day — wave counting, Fibonacci extensions, and structural setups for each listing</div>
         </div>
       </div>
       <div id="elliottStocksPane"></div>
@@ -571,6 +582,7 @@ let searchQueryElliottStocks = '';
 // Internal configuration track for active sub-filters in Elliott Wave views
 let ewIndexFilter = 'ALL';
 let ewStocksFilter = 'ALL';
+let ewUniverseFilter = 'ALL'; // ALL | NIFTY100 | NEXT400 — universe sub-filter for Elliott Wave Stocks
 let ewIdxSortKey = 'ticker', ewIdxSortDir = 1;
 let ewStkSortKey = 'ticker', ewStkSortDir = 1;
 let ewIdxSelectedTicker = null;
@@ -856,7 +868,7 @@ function renderTradingCards(data) {
             <div class="panel-hd">
                 <div>
                     <div class="panel-title">Active Volatility Bound Mapping Card Matrix</div>
-                    <div class="panel-sub">Segmented visualization maps tracking actionable support and resistance thresholds[cite: 1]</div>
+                    <div class="panel-sub">Segmented visualization maps tracking actionable support and resistance thresholds</div>
                 </div>
             </div>
             <div class="tcards-grid" id="tcGrid">${renderCardGrid(data)}</div>
@@ -889,7 +901,7 @@ function renderMatrix() {
         <div class="panel-hd">
             <div>
                 <div class="panel-title">Cross-Classification Model Framework Matrix</div>
-                <div class="panel-sub">Volatility distribution across strategic signal states[cite: 1]</div>
+                <div class="panel-sub">Volatility distribution across strategic signal states</div>
             </div>
         </div>
         <div class="mx-grid">
@@ -919,7 +931,7 @@ function renderVol() {
         <div class="panel-hd">
             <div>
                 <div class="panel-title">Statistical Volatility Profile Summary</div>
-                <div class="panel-sub">Asset clustering across statistical volatility regimes[cite: 1]</div>
+                <div class="panel-sub">Asset clustering across statistical volatility regimes</div>
             </div>
         </div>
         <div class="vol-metrics">
@@ -949,24 +961,24 @@ function renderStockPicker() {
     pane.innerHTML = `
         <div class="sp-hero">
             <div class="sp-hero-title">Technical Asset Ranking Matrix Infrastructure Layer</div>
-            <div class="sp-hero-sub">Multi-dimensional operational screener scoring relative statistical values from historical momentum and structural variance envelopes.[cite: 1]</div>
+            <div class="sp-hero-sub">Multi-dimensional operational screener scoring relative statistical values from historical momentum and structural variance envelopes.</div>
         </div>
         <div class="sp-section-title">Algorithmic Parameter Boundary Maps</div>
         <div class="sp-grid">
             <div class="sp-card" style="--sp-c:var(--blue)">
                 <div class="sp-card-icon">📊</div>
                 <div class="sp-card-name">RSI(14) Momentum Profile</div>
-                <div class="sp-card-desc">Tracks extreme rate-of-change boundaries to accurately confirm deep mean-reversion capabilities vs continuous trend persistence.[cite: 1]</div>
+                <div class="sp-card-desc">Tracks extreme rate-of-change boundaries to accurately confirm deep mean-reversion capabilities vs continuous trend persistence.</div>
             </div>
             <div class="sp-card" style="--sp-c:var(--orange)">
                 <div class="sp-card-icon">📐</div>
                 <div class="sp-card-name">ATR(14) Volatility Scaling</div>
-                <div class="sp-card-desc">Measures daily variance parameters to establish ideal sizing adjustments and structural protective stop-losses.[cite: 1]</div>
+                <div class="sp-card-desc">Measures daily variance parameters to establish ideal sizing adjustments and structural protective stop-losses.</div>
             </div>
             <div class="sp-card" style="--sp-c:var(--purple)">
                 <div class="sp-card-icon">📉</div>
                 <div class="sp-card-name">GARCH Variance Modelling</div>
-                <div class="sp-card-desc">Applies autoregressive heteroskedastic statistical processing structures to forecast dynamic variance boundaries.[cite: 1]</div>
+                <div class="sp-card-desc">Applies autoregressive heteroskedastic statistical processing structures to forecast dynamic variance boundaries.</div>
             </div>
         </div>
     `;
@@ -986,7 +998,13 @@ function downloadCSV() {
 }
 
 // ============================================================
-// COMPLETE RESTRUCTURED ELLIOTT WAVE ARCHITECTURE (DUAL-PANEL SYSTEM)
+// ELLIOTT WAVE DATA PROCESSING (DUAL-PANEL SYSTEM)
+// Maps the genuine fields produced by extract_data.py's ELLIOTT_FIELDS list.
+// Earlier versions of this function invented placeholder text ("Structural
+// Equilibrium Range", "Impulsive Cycle Structure") and looked up a
+// non-existent r.signal field; this version uses the real wave_structure,
+// action, entry_price, target1/2/3, confidence_score, rr_ratio, and
+// camarilla_confluence values that are already present in ELLIOTT_DATA.
 // ============================================================
 function processElliottData() {
     if (!ELLIOTT_DATA || !ELLIOTT_DATA.length) return [];
@@ -995,34 +1013,76 @@ function processElliottData() {
         let matchedBase = allData.find(b => b.ticker === cleanTicker);
         return {
             ticker: cleanTicker,
-            instrument_name: r.instrument_name || (matchedBase ? matchedBase.instrument_name : 'Market Index Instrument Component'),
-            asset_type: r.asset_type || ((cleanTicker.includes('NIFTY') || cleanTicker === 'INDIAVIX') ? 'INDEX' : 'EQUITY'),
-            signal: r.signal || r.action || 'WATCH',
-            wave_label: r.wave_label || r.current_wave || 'Wave 3',
-            pattern: r.pattern || 'Impulsive Cycle Structure',
-            timeframe: r.timeframe || 'Daily Interval Framework',
-            close_price: r.close_price || (matchedBase ? matchedBase.close_price : 0),
-            entry_zone: r.entry_zone || 'Structural Equilibrium Range',
-            target_1: r.target_1 || (matchedBase ? matchedBase.h4_long_breakout : 0),
-            target_2: r.target_2 || (matchedBase ? matchedBase.h4_long_breakout * 1.05 : 0),
-            stop_loss: r.stop_loss || r.invalidation_level || (matchedBase ? matchedBase.h4_sl : 0),
-            priority: r.priority || 'MEDIUM',
-            cam_interaction: r.cam_interaction || (matchedBase ? `${matchedBase.signal} Phase` : 'Standard Convergence Setup')
+            instrument_name: r.name || (matchedBase ? matchedBase.instrument_name : cleanTicker),
+            asset_type: r.asset_type || ((cleanTicker.includes('NIFTY') || cleanTicker === 'SENSEX' || cleanTicker === 'INDIAVIX') ? 'INDEX' : 'EQUITY'),
+            sector: r.sector || null,
+            is_nifty50: !!r.is_nifty50,
+            action: r.action || 'WATCH',                 // BUY | SELL | WATCH
+            priority: r.alert_priority || 'LOW',          // HIGH | MEDIUM | LOW
+            wave_label: r.wave_label || '—',
+            wave_structure: r.wave_structure || '—',      // CORRECTIVE | IMPULSE
+            wave_direction: r.wave_direction || '—',      // BULLISH | BEARISH
+            next_expected_wave: r.next_expected_wave || 'No projection available',
+            close_price: matchedBase ? matchedBase.close_price : (r.entry_price ?? 0),
+            entry_price: r.entry_price ?? null,
+            stop_loss: r.stop_loss ?? null,
+            target1: r.target1 ?? null,
+            target2: r.target2 ?? null,
+            target3: r.target3 ?? null,
+            rr_ratio: r.rr_ratio ?? null,
+            confidence_score: r.confidence_score ?? null,
+            camarilla_confluence: r.camarilla_confluence || 'No Pivot Confluence',
+            combined_signal: r.combined_signal || '',
+            atr14: r.atr14 ?? null,
+            rsi14: r.rsi14 ?? null,
+            vol_regime: r.vol_regime || 'Normal',
+            rule_violations: r.rule_violations || []
         };
     });
+}
+
+// Wave label → badge colour-class mapping (was previously hardcoded to a
+// single class regardless of the actual label).
+function ewWaveLabelClass(label) {
+    const known = { WA: 'ew-wl-WA', WB: 'ew-wl-WB', WC: 'ew-wl-WC', W3: 'ew-wl-W3', W5: 'ew-wl-W5' };
+    return known[label] || 'ew-wl-def';
+}
+
+// Partition the equity (non-INDEX) universe into NIFTY 100 (mandatory,
+// always shown in full) and the next 400 best-ranked setups for the day,
+// selected by confidence_score then rr_ratio then alert_priority.
+function partitionEwStockUniverse(stkData) {
+    const nifty100 = stkData.filter(r => r.is_nifty50);
+    const rest = stkData.filter(r => !r.is_nifty50);
+
+    const priRank = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+    const ranked = [...rest].sort((a, b) => {
+        const confDiff = (b.confidence_score ?? 0) - (a.confidence_score ?? 0);
+        if (confDiff !== 0) return confDiff;
+        const rrDiff = (b.rr_ratio ?? 0) - (a.rr_ratio ?? 0);
+        if (rrDiff !== 0) return rrDiff;
+        return (priRank[a.priority] ?? 9) - (priRank[b.priority] ?? 9);
+    });
+    const next400 = ranked.slice(0, 400);
+
+    return { nifty100, next400, all: [...nifty100, ...next400] };
 }
 
 function renderElliottIndex() {
     const pane = document.getElementById('elliottIndexPane');
     const fullEw = processElliottData();
+    // asset_type === 'INDEX' guarantees ALL index rows appear here, with no
+    // further filtering that could drop a row from view by default.
     let idxData = fullEw.filter(r => r.asset_type === 'INDEX');
 
     if (ewIndexFilter !== 'ALL') {
-        idxData = idxData.filter(r => r.signal === ewIndexFilter);
+        idxData = idxData.filter(r => r.action === ewIndexFilter);
     }
 
     idxData.sort((a, b) => {
         let av = a[ewIdxSortKey], bv = b[ewIdxSortKey];
+        if (av == null) return 1;
+        if (bv == null) return -1;
         if (typeof av === 'string') return av.localeCompare(bv) * ewIdxSortDir;
         return (av - bv) * ewIdxSortDir;
     });
@@ -1032,19 +1092,24 @@ function renderElliottIndex() {
     }
     const selectedRecord = idxData.find(r => r.ticker === ewIdxSelectedTicker) || idxData[0];
 
-    // Compute status aggregate counts
-    const buyCount = fullEw.filter(r => r.asset_type === 'INDEX' && r.signal === 'BUY').length;
-    const sellCount = fullEw.filter(r => r.asset_type === 'INDEX' && r.signal === 'SELL').length;
-    const watchCount = fullEw.filter(r => r.asset_type === 'INDEX' && r.signal === 'WATCH').length;
+    // Compute status aggregate counts (always over the FULL index set, not the active filter)
+    const allIdx = fullEw.filter(r => r.asset_type === 'INDEX');
+    const buyCount = allIdx.filter(r => r.action === 'BUY').length;
+    const sellCount = allIdx.filter(r => r.action === 'SELL').length;
+    const watchCount = allIdx.filter(r => r.action === 'WATCH').length;
 
+    if (!allIdx.length) {
+        pane.innerHTML = `<div class="empty"><div class="empty-icon">〽</div>No index wave patterns available for this snapshot.</div>`;
+        return;
+    }
     if (!idxData.length) {
-        pane.innerHTML = `<div class="empty"><div class="empty-icon">〽</div>No index wave patterns tracked for active filter constraints.</div>`;
+        pane.innerHTML = `<div class="empty"><div class="empty-icon">〽</div>No index wave patterns match the active phase filter — try "All Wave Models".</div>`;
         return;
     }
 
     pane.innerHTML = `
         <div class="ew-summary">
-            <div class="ew-sc"><div class="ew-sc-lbl">Total Indice Models</div><div class="ew-sc-val">${fullEw.filter(r => r.asset_type === 'INDEX').length}</div></div>
+            <div class="ew-sc"><div class="ew-sc-lbl">Total Indices Tracked</div><div class="ew-sc-val">${allIdx.length}</div></div>
             <div class="ew-sc"><div class="ew-sc-lbl">Bullish Impulse (BUY)</div><div class="ew-sc-val" style="color:var(--green)">${buyCount}</div></div>
             <div class="ew-sc"><div class="ew-sc-lbl">Bearish Correction (SELL)</div><div class="ew-sc-val" style="color:var(--red)">${sellCount}</div></div>
             <div class="ew-sc"><div class="ew-sc-lbl">Observation Setup (WATCH)</div><div class="ew-sc-val" style="color:var(--yellow)">${watchCount}</div></div>
@@ -1052,7 +1117,7 @@ function renderElliottIndex() {
 
         <div class="ew-topbar">
             <span class="scf-label">Phase Alignment:</span>
-            <button class="ew-pill ${ewIndexFilter==='ALL'?'on':''}" onclick="setEwIdxFilter('ALL')">All Wave Models</button>
+            <button class="ew-pill ${ewIndexFilter==='ALL'?'on':''}" onclick="setEwIdxFilter('ALL')">All Wave Models (${allIdx.length})</button>
             <button class="ew-pill buy ${ewIndexFilter==='BUY'?'on':''}" onclick="setEwIdxFilter('BUY')">Bullish Formations (${buyCount})</button>
             <button class="ew-pill sell ${ewIndexFilter==='SELL'?'on':''}" onclick="setEwIdxFilter('SELL')">Bearish Structuring (${sellCount})</button>
             <button class="ew-pill watch ${ewIndexFilter==='WATCH'?'on':''}" onclick="setEwIdxFilter('WATCH')">Incomplete Formations (${watchCount})</button>
@@ -1065,9 +1130,9 @@ function renderElliottIndex() {
                         <thead>
                             <tr>
                                 <th onclick="sortEwIdx('ticker')">Index Ticker</th>
-                                <th onclick="sortEwIdx('pattern')">Wave Structure Pattern</th>
+                                <th onclick="sortEwIdx('wave_structure')">Wave Structure</th>
                                 <th onclick="sortEwIdx('wave_label')">Active Count</th>
-                                <th onclick="sortEwIdx('signal')">Structural Phase</th>
+                                <th onclick="sortEwIdx('action')">Structural Phase</th>
                                 <th onclick="sortEwIdx('close_price')">Close</th>
                                 <th onclick="sortEwIdx('priority')">Model Weight</th>
                             </tr>
@@ -1076,9 +1141,9 @@ function renderElliottIndex() {
                             ${idxData.map(r => `
                                 <tr class="ew-row ${selectedRecord && selectedRecord.ticker===r.ticker?'ew-sel':''}" onclick="selectEwIdxRow('${r.ticker}')">
                                     <td>${r.ticker}</td>
-                                    <td><span style="font-family:var(--sans);font-weight:600;color:var(--txt)">${r.pattern}</span><br><span style="font-size:10px;color:var(--dim)">${r.timeframe}</span></td>
-                                    <td><span class="ew-wl ew-wl-W3">${r.wave_label}</span></td>
-                                    <td><span class="ew-act ew-act-${r.signal}">${r.signal}</span></td>
+                                    <td><span style="font-family:var(--sans);font-weight:600;color:var(--txt)">${r.wave_structure}</span><br><span style="font-size:10px;color:var(--dim)">${r.wave_direction}</span></td>
+                                    <td><span class="ew-wl ${ewWaveLabelClass(r.wave_label)}">${r.wave_label}</span></td>
+                                    <td><span class="ew-act ew-act-${r.action}">${r.action}</span></td>
                                     <td>${fmt(r.close_price)}</td>
                                     <td><span class="ew-pri-${r.priority}">${r.priority}</span></td>
                                 </tr>
@@ -1097,35 +1162,46 @@ function renderElliottIndex() {
 function renderElliottStocks() {
     const pane = document.getElementById('elliottStocksPane');
     const fullEw = processElliottData();
-    let stkData = fullEw.filter(r => r.asset_type !== 'INDEX');
+    const equityUniverse = fullEw.filter(r => r.asset_type !== 'INDEX');
+
+    // NIFTY 100 is always present in full; the remaining 400 "best picks"
+    // are ranked by confidence_score → rr_ratio → alert_priority.
+    const { nifty100, next400, all: rankedUniverse } = partitionEwStockUniverse(equityUniverse);
+
+    let stkData = ewUniverseFilter === 'NIFTY100' ? nifty100
+                : ewUniverseFilter === 'NEXT400'  ? next400
+                : rankedUniverse;
 
     if (ewStocksFilter !== 'ALL') {
-        stkData = stkData.filter(r => r.signal === ewStocksFilter);
+        stkData = stkData.filter(r => r.action === ewStocksFilter);
     }
 
     if (searchQueryElliottStocks) {
         stkData = stkData.filter(r =>
             (r.ticker || '').toLowerCase().includes(searchQueryElliottStocks) ||
             (r.instrument_name || '').toLowerCase().includes(searchQueryElliottStocks) ||
-            (r.pattern || '').toLowerCase().includes(searchQueryElliottStocks) ||
+            (r.wave_structure || '').toLowerCase().includes(searchQueryElliottStocks) ||
+            (r.sector || '').toLowerCase().includes(searchQueryElliottStocks) ||
             (r.priority || '').toLowerCase().includes(searchQueryElliottStocks)
         );
     }
 
     stkData.sort((a, b) => {
         let av = a[ewStkSortKey], bv = b[ewStkSortKey];
+        if (av == null) return 1;
+        if (bv == null) return -1;
         if (typeof av === 'string') return av.localeCompare(bv) * ewStkSortDir;
         return (av - bv) * ewStkSortDir;
     });
 
-    if (!ewStkSelectedTicker && stkData.length) {
-        ewStkSelectedTicker = stkData[0].ticker;
+    if (!ewStkSelectedTicker || !stkData.find(r => r.ticker === ewStkSelectedTicker)) {
+        ewStkSelectedTicker = stkData.length ? stkData[0].ticker : null;
     }
     const selectedRecord = stkData.find(r => r.ticker === ewStkSelectedTicker) || stkData[0];
 
-    const buyCount = fullEw.filter(r => r.asset_type !== 'INDEX' && r.signal === 'BUY').length;
-    const sellCount = fullEw.filter(r => r.asset_type !== 'INDEX' && r.signal === 'SELL').length;
-    const watchCount = fullEw.filter(r => r.asset_type !== 'INDEX' && r.signal === 'WATCH').length;
+    const buyCount = rankedUniverse.filter(r => r.action === 'BUY').length;
+    const sellCount = rankedUniverse.filter(r => r.action === 'SELL').length;
+    const watchCount = rankedUniverse.filter(r => r.action === 'WATCH').length;
 
     // Update match metrics counter
     const countEl = document.getElementById('searchCountElliottStocks');
@@ -1133,41 +1209,41 @@ function renderElliottStocks() {
         countEl.textContent = searchQueryElliottStocks ? `${stkData.length} matches` : '';
     }
 
+    const universeBar = `
+        <div class="ew-topbar">
+            <span class="scf-label">Universe:</span>
+            <button class="ew-pill ${ewUniverseFilter==='ALL'?'on':''}" onclick="setEwUniverseFilter('ALL')">Full Tracked Universe (${rankedUniverse.length})</button>
+            <button class="ew-pill ${ewUniverseFilter==='NIFTY100'?'on':''}" onclick="setEwUniverseFilter('NIFTY100')">NIFTY 100 — Mandatory (${nifty100.length})</button>
+            <button class="ew-pill ${ewUniverseFilter==='NEXT400'?'on':''}" onclick="setEwUniverseFilter('NEXT400')">Next 400 — Best Picks (${next400.length})</button>
+        </div>
+        <div class="ew-topbar">
+            <span class="scf-label">Phase Alignment:</span>
+            <button class="ew-pill ${ewStocksFilter==='ALL'?'on':''}" onclick="setEwStkFilter('ALL')">All Equity Counts</button>
+            <button class="ew-pill buy ${ewStocksFilter==='BUY'?'on':''}" onclick="setEwStkFilter('BUY')">Bullish Track (${buyCount})</button>
+            <button class="ew-pill sell ${ewStocksFilter==='SELL'?'on':''}" onclick="setEwStkFilter('SELL')">Bearish Projections (${sellCount})</button>
+            <button class="ew-pill watch ${ewStocksFilter==='WATCH'?'on':''}" onclick="setEwStkFilter('WATCH')">Observation Nodes (${watchCount})</button>
+        </div>`;
+
+    const summaryBar = `
+        <div class="ew-summary">
+            <div class="ew-sc"><div class="ew-sc-lbl">NIFTY 100 (Mandatory)</div><div class="ew-sc-val" style="color:var(--purple)">${nifty100.length}</div></div>
+            <div class="ew-sc"><div class="ew-sc-lbl">Next 400 (Best Picks)</div><div class="ew-sc-val" style="color:var(--teal)">${next400.length}</div></div>
+            <div class="ew-sc"><div class="ew-sc-lbl">Bullish Acceleration (BUY)</div><div class="ew-sc-val" style="color:var(--green)">${buyCount}</div></div>
+            <div class="ew-sc"><div class="ew-sc-lbl">Corrective Risk Zones (SELL)</div><div class="ew-sc-val" style="color:var(--red)">${sellCount}</div></div>
+        </div>`;
+
     if (!stkData.length) {
         pane.innerHTML = `
-            <div class="ew-summary">
-                <div class="ew-sc"><div class="ew-sc-lbl">Total Tracked Equities</div><div class="ew-sc-val">${fullEw.filter(r => r.asset_type !== 'INDEX').length}</div></div>
-                <div class="ew-sc"><div class="ew-sc-lbl">Bullish Acceleration (BUY)</div><div class="ew-sc-val" style="color:var(--green)">${buyCount}</div></div>
-                <div class="ew-sc"><div class="ew-sc-lbl">Corrective Risk Zones (SELL)</div><div class="ew-sc-val" style="color:var(--red)">${sellCount}</div></div>
-                <div class="ew-sc"><div class="ew-sc-lbl">Emerging Formations (WATCH)</div><div class="ew-sc-val" style="color:var(--yellow)">${watchCount}</div></div>
-            </div>
-            <div class="ew-topbar">
-                <span class="scf-label">Asset Filtering Layer:</span>
-                <button class="ew-pill ${ewStocksFilter==='ALL'?'on':''}" onclick="setEwStkFilter('ALL')">All Equity Counts</button>
-                <button class="ew-pill buy ${ewStocksFilter==='BUY'?'on':''}" onclick="setEwStkFilter('BUY')">Bullish Track (${buyCount})</button>
-                <button class="ew-pill sell ${ewStocksFilter==='SELL'?'on':''}" onclick="setEwStkFilter('SELL')">Bearish Projections (${sellCount})</button>
-                <button class="ew-pill watch ${ewStocksFilter==='WATCH'?'on':''}" onclick="setEwStkFilter('WATCH')">Observation Nodes (${watchCount})</button>
-            </div>
+            ${summaryBar}
+            ${universeBar}
             <div class="empty"><div class="empty-icon">〽</div>No equity wave models match active tracking properties or search terms.</div>
         `;
         return;
     }
 
     pane.innerHTML = `
-        <div class="ew-summary">
-            <div class="ew-sc"><div class="ew-sc-lbl">Total Tracked Equities</div><div class="ew-sc-val">${fullEw.filter(r => r.asset_type !== 'INDEX').length}</div></div>
-            <div class="ew-sc"><div class="ew-sc-lbl">Bullish Acceleration (BUY)</div><div class="ew-sc-val" style="color:var(--green)">${buyCount}</div></div>
-            <div class="ew-sc"><div class="ew-sc-lbl">Corrective Risk Zones (SELL)</div><div class="ew-sc-val" style="color:var(--red)">${sellCount}</div></div>
-            <div class="ew-sc"><div class="ew-sc-lbl">Emerging Formations (WATCH)</div><div class="ew-sc-val" style="color:var(--yellow)">${watchCount}</div></div>
-        </div>
-
-        <div class="ew-topbar">
-            <span class="scf-label">Asset Filtering Layer:</span>
-            <button class="ew-pill ${ewStocksFilter==='ALL'?'on':''}" onclick="setEwStkFilter('ALL')">All Equity Counts</button>
-            <button class="ew-pill buy ${ewStocksFilter==='BUY'?'on':''}" onclick="setEwStkFilter('BUY')">Bullish Track (${buyCount})</button>
-            <button class="ew-pill sell ${ewStocksFilter==='SELL'?'on':''}" onclick="setEwStkFilter('SELL')">Bearish Projections (${sellCount})</button>
-            <button class="ew-pill watch ${ewStocksFilter==='WATCH'?'on':''}" onclick="setEwStkFilter('WATCH')">Observation Nodes (${watchCount})</button>
-        </div>
+        ${summaryBar}
+        ${universeBar}
 
         <div class="ew-split-layout">
             <div class="ew-table-pane">
@@ -1176,21 +1252,23 @@ function renderElliottStocks() {
                         <thead>
                             <tr>
                                 <th onclick="sortEwStk('ticker')">Equity Ticker</th>
-                                <th onclick="sortEwStk('pattern')">Wave Structure Pattern</th>
+                                <th onclick="sortEwStk('wave_structure')">Wave Structure</th>
                                 <th onclick="sortEwStk('wave_label')">Active Count</th>
-                                <th onclick="sortEwStk('signal')">Structural Phase</th>
-                                <th onclick="sortEwStk('close_price')">Close</th>
+                                <th onclick="sortEwStk('action')">Structural Phase</th>
+                                <th onclick="sortEwStk('confidence_score')">Confidence</th>
+                                <th onclick="sortEwStk('rr_ratio')">R:R</th>
                                 <th onclick="sortEwStk('priority')">Model Weight</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${stkData.map(r => `
                                 <tr class="ew-row ${selectedRecord && selectedRecord.ticker===r.ticker?'ew-sel':''}" onclick="selectEwStkRow('${r.ticker}')">
-                                    <td>${r.ticker}</td>
-                                    <td><span style="font-family:var(--sans);font-weight:600;color:var(--txt)">${r.pattern}</span><br><span style="font-size:10px;color:var(--dim)">${r.timeframe}</span></td>
-                                    <td><span class="ew-wl ew-wl-W5">${r.wave_label}</span></td>
-                                    <td><span class="ew-act ew-act-${r.signal}">${r.signal}</span></td>
-                                    <td>${fmt(r.close_price)}</td>
+                                    <td>${r.ticker}${r.is_nifty50 ? '<span class="universe-badge n50">N50</span>' : ''}</td>
+                                    <td><span style="font-family:var(--sans);font-weight:600;color:var(--txt)">${r.wave_structure}</span><br><span style="font-size:10px;color:var(--dim)">${r.wave_direction}</span></td>
+                                    <td><span class="ew-wl ${ewWaveLabelClass(r.wave_label)}">${r.wave_label}</span></td>
+                                    <td><span class="ew-act ew-act-${r.action}">${r.action}</span></td>
+                                    <td>${r.confidence_score != null ? r.confidence_score.toFixed(0)+'%' : '—'}</td>
+                                    <td>${r.rr_ratio != null ? r.rr_ratio.toFixed(2) : '—'}</td>
                                     <td><span class="ew-pri-${r.priority}">${r.priority}</span></td>
                                 </tr>
                             `).join('')}
@@ -1206,34 +1284,44 @@ function renderElliottStocks() {
 }
 
 function renderEwDetailHTML(r) {
+    const rrColor = (r.rr_ratio ?? 0) >= 2 ? 'var(--green)' : (r.rr_ratio ?? 0) >= 1 ? 'var(--yellow)' : 'var(--red)';
     return `
         <div class="ew-det-wrap">
             <div class="ew-det-header">
                 <div>
-                    <div class="ew-det-ticker">${r.ticker}</div>
-                    <div class="ew-det-name">${r.instrument_name}</div>
+                    <div class="ew-det-ticker">${r.ticker}${r.is_nifty50 ? '<span class="universe-badge n50">NIFTY 50</span>' : ''}</div>
+                    <div class="ew-det-name">${r.instrument_name}${r.sector ? ' · ' + r.sector : ''}</div>
                     <div class="ew-badge-row">
-                        <span class="ew-act ew-act-${r.signal}">Phase: ${r.signal}</span>
-                        <span class="ew-wl ew-wl-WA">${r.wave_label}</span>
-                        <span class="ew-cam-H3">${r.cam_interaction}</span>
+                        <span class="ew-act ew-act-${r.action}">Action: ${r.action}</span>
+                        <span class="ew-wl ${ewWaveLabelClass(r.wave_label)}">${r.wave_label}</span>
+                        <span class="ew-cam-H3">${r.camarilla_confluence}</span>
                     </div>
                 </div>
                 <div class="ew-price-block">
                     <div class="ew-price-big">${fmt(r.close_price)}</div>
-                    <div class="ew-price-lbl">Last Processed Price Bounds</div>
+                    <div class="ew-price-lbl">Last Close · Confidence ${r.confidence_score != null ? r.confidence_score.toFixed(0)+'%' : '—'}</div>
                 </div>
             </div>
-            
+
             <div class="ew-ladder">
-                <div class="ew-ladder-hdr"><span>Structural Projection Steps</span><span>Fibonacci Levels Mapping</span></div>
-                <div class="ew-lrow"><div class="ew-lrow-lbl">Objective Target Bound 2</div><div class="ew-lrow-price" style="color:var(--green)">${fmt(r.target_2)}</div></div>
-                <div class="ew-lrow ew-entry-row"><div class="ew-lrow-lbl">Objective Target Bound 1</div><div class="ew-lrow-price" style="color:var(--acc2)">${fmt(r.target_1)}</div></div>
-                <div class="ew-lrow"><div class="ew-lrow-lbl">Calculated Median Floor</div><div class="ew-lrow-price">${fmt(r.close_price)}</div></div>
-                <div class="ew-lrow" style="background:rgba(185,28,28,0.02)"><div class="ew-lrow-lbl">Invalidation Stop Bound</div><div class="ew-lrow-price" style="color:var(--red)">${fmt(r.stop_loss)}</div></div>
+                <div class="ew-ladder-hdr"><span>Fibonacci Extension Targets</span><span>Level</span></div>
+                <div class="ew-lrow"><div class="ew-lrow-lbl">Target 3 (161.8% ext.)</div><div class="ew-lrow-price" style="color:var(--green)">${fmt(r.target3)}</div></div>
+                <div class="ew-lrow"><div class="ew-lrow-lbl">Target 2 (100% ext.)</div><div class="ew-lrow-price" style="color:var(--green)">${fmt(r.target2)}</div></div>
+                <div class="ew-lrow ew-entry-row"><div class="ew-lrow-lbl">Target 1 (61.8% ext.)</div><div class="ew-lrow-price" style="color:var(--acc2)">${fmt(r.target1)}</div></div>
+                <div class="ew-lrow"><div class="ew-lrow-lbl">Entry Price</div><div class="ew-lrow-price">${fmt(r.entry_price)}</div></div>
+                <div class="ew-lrow" style="background:rgba(185,28,28,0.02)"><div class="ew-lrow-lbl">Stop Loss (Invalidation)</div><div class="ew-lrow-price" style="color:var(--red)">${fmt(r.stop_loss)}</div></div>
             </div>
-            
-            <div style="font-family:var(--sans);font-size:12px;color:var(--soft);line-height:1.6;background:var(--surf);padding:14px;border-radius:var(--r);border:1px solid var(--bdr)">
-                <strong>Structural Pattern Evaluation Context:</strong> Currently validating an active <em>${r.pattern}</em> across standard macro projection profiles. Sustaining trading properties above the invalidation metric at <strong>${fmt(r.stop_loss)}</strong> confirms structural targeting vectors.
+
+            <div class="ew-summary" style="grid-template-columns:repeat(3,1fr);margin-top:12px">
+                <div class="ew-sc"><div class="ew-sc-lbl">Risk : Reward</div><div class="ew-sc-val" style="color:${rrColor}">${r.rr_ratio != null ? r.rr_ratio.toFixed(2) : '—'}</div></div>
+                <div class="ew-sc"><div class="ew-sc-lbl">ATR (14)</div><div class="ew-sc-val">${fmt(r.atr14)}</div></div>
+                <div class="ew-sc"><div class="ew-sc-lbl">RSI (14)</div><div class="ew-sc-val">${r.rsi14 != null ? r.rsi14.toFixed(1) : '—'}</div></div>
+            </div>
+
+            <div style="font-family:var(--sans);font-size:12px;color:var(--soft);line-height:1.6;background:var(--surf);padding:14px;border-radius:var(--r);border:1px solid var(--bdr);margin-top:12px">
+                <strong>Wave Outlook:</strong> Currently in <em>${r.wave_structure}</em> structure (${r.wave_direction}), wave ${r.wave_label}. ${r.next_expected_wave}
+                Volatility regime: <strong>${r.vol_regime}</strong>.
+                ${r.rule_violations && r.rule_violations.length ? `<br><span style="color:var(--red)">⚠ Rule check: ${r.rule_violations.join(', ')}</span>` : ''}
             </div>
         </div>
     `;
@@ -1241,6 +1329,7 @@ function renderEwDetailHTML(r) {
 
 function setEwIdxFilter(val) { ewIndexFilter = val; renderElliottIndex(); }
 function setEwStkFilter(val) { ewStocksFilter = val; renderElliottStocks(); }
+function setEwUniverseFilter(val) { ewUniverseFilter = val; ewStkSelectedTicker = null; renderElliottStocks(); }
 function selectEwIdxRow(tk) { ewIdxSelectedTicker = tk; renderElliottIndex(); }
 function selectEwStkRow(tk) { ewStkSelectedTicker = tk; renderElliottStocks(); }
 function sortEwIdx(k) { if(ewIdxSortKey===k) { ewIdxSortDir*=-1; } else { ewIdxSortKey=k; ewIdxSortDir=1; } renderElliottIndex(); }
